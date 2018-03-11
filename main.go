@@ -128,7 +128,12 @@ func main() {
 	router.GET("/locales", getLocales)
 	router.PUT("/locales", putLocales)
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	addr := "0.0.0.0:" + port
+	log.Fatal(http.ListenAndServe(addr, router))
 }
 
 func init() {
