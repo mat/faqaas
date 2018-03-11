@@ -97,10 +97,15 @@ func main() {
 	// host, port, user, dbname)
 	// db, err := sql.Open("postgres", connStr)
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable",
-		host, port, user, dbname)
+	databaseURL := os.Getenv("DATABASE_URL")
 	var err error
-	db, err = sql.Open("postgres", psqlInfo)
+	if databaseURL != "" {
+		db, err = sql.Open("postgres", databaseURL)
+	} else {
+		psqlInfo := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable",
+			host, port, user, dbname)
+		db, err = sql.Open("postgres", psqlInfo)
+	}
 	if err != nil {
 		panic(err)
 	}
