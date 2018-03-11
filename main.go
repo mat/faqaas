@@ -115,7 +115,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// fmt.Println("Successfully connected!")
+	fmt.Println("Successfully connected!")
 
 	locales := getAllLocales(db)
 
