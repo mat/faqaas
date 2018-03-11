@@ -13,6 +13,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
+var db *sql.DB
+
 const (
 	host     = "localhost"
 	port     = 5432
@@ -46,19 +48,9 @@ func putLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func getLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable",
-		host, port, user, dbname)
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
+	if err := db.Ping(); err != nil {
 		panic(err)
 	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-	// fmt.Println("Successfully connected!")
 
 	locales := getAllLocales(db)
 
@@ -107,7 +99,8 @@ func main() {
 
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable",
 		host, port, user, dbname)
-	db, err := sql.Open("postgres", psqlInfo)
+	var err error
+	db, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
 	}
