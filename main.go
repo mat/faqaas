@@ -174,9 +174,9 @@ func main() {
 	router.GET("/", Index)
 	router.GET("/hello/:name", Hello)
 
-	router.GET("/locales", getLocales)
-	router.PUT("/locales", putLocales)
-	router.DELETE("/locales", deleteLocales)
+	router.GET("/api/locales", getLocales)
+	router.PUT("/api/locales", putLocales)
+	router.DELETE("/api/locales", deleteLocales)
 
 	port := os.Getenv("PORT")
 	if port == "" {
