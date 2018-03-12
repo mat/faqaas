@@ -71,7 +71,7 @@ func getAllLocales(db *sql.DB) []Locale {
 		panic(err)
 	}
 	defer rows.Close()
-	var locales []Locale
+	locales := []Locale{}
 	for rows.Next() {
 		var id int
 		var code string
