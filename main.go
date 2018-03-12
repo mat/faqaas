@@ -40,26 +40,39 @@ func putLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	var l Locale
 	err := decoder.Decode(&l)
 	if err != nil {
-		panic(err)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 	defer r.Body.Close()
 	log.Println(l)
 
-	saveLocale(db, &l)
+	err = saveLocale(db, &l)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	} else {
+		// Write JSON result
+		w.Header().Set("Content-Type", "application/json")
+		enc := json.NewEncoder(w)
+		enc.Encode(l)
+	}
 }
 
 func getLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if err := db.Ping(); err != nil {
-		panic(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
-	locales := getAllLocales(db)
+	locales, err := getAllLocales(db)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
+	// Write JSON result
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 	enc.Encode(locales)
-
-	// fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
 }
 
 func saveLocale(db *sql.DB, loc *Locale) error {
@@ -71,10 +84,10 @@ func saveLocale(db *sql.DB, loc *Locale) error {
 	return err
 }
 
-func getAllLocales(db *sql.DB) []Locale {
+func getAllLocales(db *sql.DB) ([]Locale, error) {
 	rows, err := db.Query("SELECT id, code, name FROM locales;")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer rows.Close()
 	locales := []Locale{}
@@ -84,17 +97,17 @@ func getAllLocales(db *sql.DB) []Locale {
 		var name string
 		err = rows.Scan(&id, &code, &name)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		locales = append(locales, Locale{Code: code, Name: name})
 	}
 
 	err = rows.Err()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return locales
+	return locales, nil
 }
 
 func main() {
@@ -123,7 +136,7 @@ func main() {
 	}
 	fmt.Println("Successfully connected!")
 
-	locales := getAllLocales(db)
+	locales, _ := getAllLocales(db)
 
 	enc := json.NewEncoder(os.Stdout)
 	enc.Encode(locales)
@@ -131,8 +144,10 @@ func main() {
 	router := httprouter.New()
 	router.GET("/", Index)
 	router.GET("/hello/:name", Hello)
+
 	router.GET("/locales", getLocales)
 	router.PUT("/locales", putLocales)
+	// router.DELETE("/locales", deleteLocales)
 
 	port := os.Getenv("PORT")
 	if port == "" {
