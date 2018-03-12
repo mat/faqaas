@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -45,6 +44,8 @@ func putLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 	defer r.Body.Close()
 	log.Println(l)
+
+	saveLocale(db, &l)
 }
 
 func getLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -62,7 +63,12 @@ func getLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func saveLocale(db *sql.DB, loc *Locale) error {
-	return errors.New("wtf")
+	sqlStatement := `
+		INSERT INTO locales (code,name) VALUES ($1, $2)
+		 ON CONFLICT (code)
+		 DO UPDATE SET name = EXCLUDED.name`
+	_, err := db.Exec(sqlStatement, loc.Code, loc.Name)
+	return err
 }
 
 func getAllLocales(db *sql.DB) []Locale {
