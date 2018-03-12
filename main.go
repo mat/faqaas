@@ -75,12 +75,41 @@ func getLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	enc.Encode(locales)
 }
 
+func deleteLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	decoder := json.NewDecoder(r.Body)
+	var l Locale
+	err := decoder.Decode(&l)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+	log.Println(l)
+
+	err = deleteLocale(db, &l)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+}
+
 func saveLocale(db *sql.DB, loc *Locale) error {
 	sqlStatement := `
 		INSERT INTO locales (code,name) VALUES ($1, $2)
 		 ON CONFLICT (code)
 		 DO UPDATE SET name = EXCLUDED.name`
 	_, err := db.Exec(sqlStatement, loc.Code, loc.Name)
+	if err != nil {
+		fmt.Print("DB ERR:", err)
+	}
+	return err
+}
+
+func deleteLocale(db *sql.DB, loc *Locale) error {
+	sqlStatement := `DELETE FROM locales WHERE code = $1`
+	_, err := db.Exec(sqlStatement, loc.Code)
+	if err != nil {
+		fmt.Print("DB ERR:", err)
+	}
 	return err
 }
 
@@ -147,7 +176,7 @@ func main() {
 
 	router.GET("/locales", getLocales)
 	router.PUT("/locales", putLocales)
-	// router.DELETE("/locales", deleteLocales)
+	router.DELETE("/locales", deleteLocales)
 
 	port := os.Getenv("PORT")
 	if port == "" {
