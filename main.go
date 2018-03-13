@@ -10,6 +10,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	_ "github.com/lib/pq"
+	"golang.org/x/text/language"
 )
 
 var db *sql.DB
@@ -25,6 +26,10 @@ const (
 type Locale struct {
 	Code string `json:"code"`
 	Name string `json:"name"`
+}
+
+type Error struct {
+	Error string `json:"error"`
 }
 
 func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -49,6 +54,10 @@ func putLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	err = saveLocale(db, &l)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		// Write JSON result
+		w.Header().Set("Content-Type", "application/json")
+		enc := json.NewEncoder(w)
+		enc.Encode(Error{Error: err.Error()})
 	} else {
 		// Write JSON result
 		w.Header().Set("Content-Type", "application/json")
@@ -93,11 +102,16 @@ func deleteLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 }
 
 func saveLocale(db *sql.DB, loc *Locale) error {
+	_, err := language.Parse(loc.Code)
+	if err != nil {
+		return err
+	}
+
 	sqlStatement := `
 		INSERT INTO locales (code,name) VALUES ($1, $2)
 		 ON CONFLICT (code)
 		 DO UPDATE SET name = EXCLUDED.name`
-	_, err := db.Exec(sqlStatement, loc.Code, loc.Name)
+	_, err = db.Exec(sqlStatement, loc.Code, loc.Name)
 	if err != nil {
 		fmt.Print("DB ERR:", err)
 	}
