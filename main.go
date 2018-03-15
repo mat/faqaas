@@ -28,6 +28,11 @@ type Locale struct {
 	Name string `json:"name"`
 }
 
+type Category struct {
+	Code string `json:"code"`
+	// Name string `json:"name"`
+}
+
 type Error struct {
 	Error string `json:"error"`
 }
@@ -153,6 +158,45 @@ func getAllLocales(db *sql.DB) ([]Locale, error) {
 	return locales, nil
 }
 
+func getAllCategories(db *sql.DB) ([]Category, error) {
+	rows, err := db.Query("SELECT id, code FROM categories;")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	categories := []Category{}
+	for rows.Next() {
+		var id int
+		var code string
+		// var name string
+		err = rows.Scan(&id, &code)
+		if err != nil {
+			return nil, err
+		}
+		categories = append(categories, Category{Code: code})
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return categories, nil
+}
+
+func getCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	categories, err := getAllCategories(db)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	// Write JSON result
+	w.Header().Set("Content-Type", "application/json")
+	enc := json.NewEncoder(w)
+	enc.Encode(categories)
+}
+
 func main() {
 	// connStr := "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
 	// connStr := fmt.Sprintf("postgres://mat:@localhost/faqaas?sslmode=disable",
@@ -191,6 +235,9 @@ func main() {
 	router.GET("/api/locales", getLocales)
 	router.PUT("/api/locales", putLocales)
 	router.DELETE("/api/locales", deleteLocales)
+
+	router.GET("/api/categories", getCategories)
+	// router.POST("/api/categories", postCategories)
 
 	port := os.Getenv("PORT")
 	if port == "" {

@@ -5,6 +5,18 @@ CREATE TABLE locales (
   name TEXT
 );
 
+CREATE TABLE categories (
+  id SERIAL PRIMARY KEY,
+  code TEXT UNIQUE NOT NULL
+);
+
+CREATE TABLE category_translations (
+  id SERIAL PRIMARY KEY,
+  category_id INTEGER REFERENCES categories (id),
+  locale_code TEXT REFERENCES locales (code),
+  name TEXT
+);
+
 
 // Upsert
 INSERT INTO locales (code,name) VALUES ('de', 'German') ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name;
