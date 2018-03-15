@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	_ "github.com/lib/pq"
@@ -197,6 +199,40 @@ func getCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	enc.Encode(categories)
 }
 
+func postCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	category, err := createCategory(db)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	// Write JSON result
+	w.Header().Set("Content-Type", "application/json")
+	enc := json.NewEncoder(w)
+	enc.Encode(category)
+}
+
+// https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-golang/22892986#22892986
+var letters = []rune("01234567890ABCDEFGHIJKLMNPQRSTUVWXYZ")
+
+func randomString(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
+
+func createCategory(db *sql.DB) (*Category, error) {
+	sqlStatement := `
+		INSERT INTO categories (code) VALUES ($1)`
+	_, err := db.Exec(sqlStatement, randomString(5))
+	if err != nil {
+		fmt.Print("DB ERR:", err)
+	}
+	return nil, err
+}
+
 func main() {
 	// connStr := "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
 	// connStr := fmt.Sprintf("postgres://mat:@localhost/faqaas?sslmode=disable",
@@ -237,7 +273,7 @@ func main() {
 	router.DELETE("/api/locales", deleteLocales)
 
 	router.GET("/api/categories", getCategories)
-	// router.POST("/api/categories", postCategories)
+	router.POST("/api/categories", postCategories)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -248,5 +284,5 @@ func main() {
 }
 
 func init() {
-
+	rand.Seed(time.Now().UnixNano())
 }
