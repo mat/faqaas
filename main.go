@@ -45,7 +45,16 @@ type Error struct {
 	Error string `json:"error"`
 }
 
-func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func redirectToFAQs(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	http.Redirect(w, r, "/faqs/de-de", http.StatusFound)
+}
+
+func getFAQsHTML(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	fmt.Fprint(w, "Welcome!\n")
+	fmt.Fprint(w, p.ByName("locale"))
+}
+
+func IndexNoLocale(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	fmt.Fprint(w, "Welcome!\n")
 }
 
@@ -357,8 +366,9 @@ func main() {
 	enc.Encode(locales)
 
 	router := httprouter.New()
-	router.GET("/", Index)
-	router.GET("/hello/:name", Hello)
+	router.GET("/", redirectToFAQs)
+	router.GET("/faqs/", redirectToFAQs)
+	router.GET("/faqs/:locale", getFAQsHTML)
 
 	router.GET("/api/locales", getLocales)
 	router.PUT("/api/locales", putLocales)
