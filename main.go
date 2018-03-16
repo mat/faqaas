@@ -35,6 +35,12 @@ type Category struct {
 	// Name string `json:"name"`
 }
 
+type FAQ struct {
+	Code     string `json:"code"`
+	Question string `json:"question"`
+	Answer   string `json:"answer"`
+}
+
 type Error struct {
 	Error string `json:"error"`
 }
@@ -186,6 +192,33 @@ func getAllCategories(db *sql.DB) ([]Category, error) {
 	return categories, nil
 }
 
+func getAllFAQs(db *sql.DB) ([]FAQ, error) {
+	rows, err := db.Query("SELECT id, code, question, answer FROM faqs;")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	faqs := []FAQ{}
+	for rows.Next() {
+		var id int
+		var code string
+		var question string
+		var answer string
+		err = rows.Scan(&id, &code, &question, &answer)
+		if err != nil {
+			return nil, err
+		}
+		faqs = append(faqs, FAQ{Code: code, Question: question, Answer: answer})
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return faqs, nil
+}
+
 func getCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	categories, err := getAllCategories(db)
 	if err != nil {
@@ -197,6 +230,19 @@ func getCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 	enc.Encode(categories)
+}
+
+func getFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	faqs, err := getAllFAQs(db)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	// Write JSON result
+	w.Header().Set("Content-Type", "application/json")
+	enc := json.NewEncoder(w)
+	enc.Encode(faqs)
 }
 
 func postCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -224,13 +270,16 @@ func randomString(n int) string {
 }
 
 func createCategory(db *sql.DB) (*Category, error) {
+	category := Category{Code: randomString(5)}
+
 	sqlStatement := `
 		INSERT INTO categories (code) VALUES ($1)`
-	_, err := db.Exec(sqlStatement, randomString(5))
+	_, err := db.Exec(sqlStatement, category.Code)
 	if err != nil {
 		fmt.Print("DB ERR:", err)
 	}
-	return nil, err
+
+	return &category, err
 }
 
 func main() {
@@ -274,6 +323,9 @@ func main() {
 
 	router.GET("/api/categories", getCategories)
 	router.POST("/api/categories", postCategories)
+
+	router.GET("/api/faqs", getFAQs)
+	// router.POST("/api/categories", postCategories)
 
 	port := os.Getenv("PORT")
 	if port == "" {

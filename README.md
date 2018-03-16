@@ -5,6 +5,14 @@ CREATE TABLE locales (
   name TEXT
 );
 
+CREATE TABLE faqs (
+  id SERIAL PRIMARY KEY,
+  code TEXT UNIQUE NOT NULL,
+  question TEXT,
+  answer TEXT
+);
+
+
 CREATE TABLE categories (
   id SERIAL PRIMARY KEY,
   code TEXT UNIQUE NOT NULL
