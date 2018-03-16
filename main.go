@@ -79,6 +79,32 @@ func putLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 }
 
+func postFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	decoder := json.NewDecoder(r.Body)
+	var faq FAQ
+	err := decoder.Decode(&faq)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+	log.Println(faq)
+
+	err = saveFAQ(db, &faq)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		// Write JSON result
+		w.Header().Set("Content-Type", "application/json")
+		enc := json.NewEncoder(w)
+		enc.Encode(Error{Error: err.Error()})
+	} else {
+		// Write JSON result
+		w.Header().Set("Content-Type", "application/json")
+		enc := json.NewEncoder(w)
+		enc.Encode(faq)
+	}
+}
+
 func getLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if err := db.Ping(); err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -125,6 +151,23 @@ func saveLocale(db *sql.DB, loc *Locale) error {
 		 ON CONFLICT (code)
 		 DO UPDATE SET name = EXCLUDED.name`
 	_, err = db.Exec(sqlStatement, loc.Code, loc.Name)
+	if err != nil {
+		fmt.Print("DB ERR:", err)
+	}
+	return err
+}
+
+func saveFAQ(db *sql.DB, faq *FAQ) error {
+	if len(faq.Code) == 0 {
+		faq.Code = randomString(5)
+	}
+
+	sqlStatement := `
+		INSERT INTO faqs (code,question,answer) VALUES ($1, $2, $3)
+		 ON CONFLICT (code)
+		 DO UPDATE SET question = EXCLUDED.question,
+		 answer = EXCLUDED.answer`
+	_, err := db.Exec(sqlStatement, faq.Code, faq.Question, faq.Answer)
 	if err != nil {
 		fmt.Print("DB ERR:", err)
 	}
@@ -325,7 +368,7 @@ func main() {
 	router.POST("/api/categories", postCategories)
 
 	router.GET("/api/faqs", getFAQs)
-	// router.POST("/api/categories", postCategories)
+	router.POST("/api/faqs", postFAQs)
 
 	port := os.Getenv("PORT")
 	if port == "" {
