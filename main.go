@@ -46,7 +46,40 @@ type Error struct {
 }
 
 func redirectToFAQs(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	http.Redirect(w, r, "/faqs/de-de", http.StatusFound)
+
+	locales, err := getAllLocales(db)
+	if err != nil {
+		panic(err)
+	}
+	supported := []language.Tag{}
+	for _, loc := range locales {
+		tag, err := language.Parse(loc.Code)
+		if err != nil {
+			panic(nil)
+		}
+		supported = append(supported, tag)
+	}
+
+	// var supported = []language.Tag{
+	// 	language.AmericanEnglish,    // en-US: first language is fallback
+	// 	language.German,             // de
+	// 	language.Dutch,              // nl
+	// 	language.Portuguese,         // pt (defaults to Brazilian)
+	// 	language.EuropeanPortuguese, // pt-pT
+	// 	language.Romanian,           // ro
+	// 	language.Serbian,            // sr (defaults to Cyrillic script)
+	// 	language.SerbianLatin,       // sr-Latn
+	// 	language.SimplifiedChinese,  // zh-Hans
+	// 	language.TraditionalChinese, // zh-Hant
+	// }
+	var matcher = language.NewMatcher(supported)
+
+	lang, _ := r.Cookie("lang")
+	accept := r.Header.Get("Accept-Language")
+	tag, _ := language.MatchStrings(matcher, lang.String(), accept)
+
+	redirectURL := fmt.Sprintf("/faqs/%s", tag)
+	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
 
 func getFAQsHTML(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
