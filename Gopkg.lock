@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/gorilla/handlers"
+  packages = ["."]
+  revision = "90663712d74cb411cbef281bc1e08c19d1a76145"
+  version = "v1.3.0"
+
+[[projects]]
   name = "github.com/julienschmidt/httprouter"
   packages = ["."]
   revision = "8c199fb6259ffc1af525cc3ad52ee60ba8359669"
@@ -14,7 +20,7 @@
     ".",
     "oid"
   ]
-  revision = "88edab0803230a3898347e77b474f8c1820a1f20"
+  revision = "b2004221932bd6b13167ef654c81cffac36f7537"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -30,6 +36,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6fe7c6c85d0c8c12b081ab3653bae1b7dc820081ad10b737d4845d5c3942e993"
+  inputs-digest = "924188a73b3fe540dd23c654c6bbda9e8b93620a1c6af550e03d1be1a64c0f1d"
   solver-name = "gps-cdcl"
   solver-version = 1

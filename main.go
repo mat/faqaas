@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/julienschmidt/httprouter"
 	_ "github.com/lib/pq"
 	"golang.org/x/text/language"
@@ -104,7 +105,6 @@ func putLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 	defer r.Body.Close()
-	log.Println(l)
 
 	err = saveLocale(db, &l)
 	if err != nil {
@@ -130,7 +130,6 @@ func postFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 	defer r.Body.Close()
-	log.Println(faq)
 
 	err = saveFAQ(db, &faq)
 	if err != nil {
@@ -174,7 +173,6 @@ func deleteLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 	defer r.Body.Close()
-	log.Println(l)
 
 	err = deleteLocale(db, &l)
 	if err != nil {
@@ -393,11 +391,6 @@ func main() {
 	}
 	fmt.Println("Successfully connected!")
 
-	locales, _ := getAllLocales(db)
-
-	enc := json.NewEncoder(os.Stdout)
-	enc.Encode(locales)
-
 	router := httprouter.New()
 	router.GET("/", redirectToFAQs)
 	router.GET("/faqs/", redirectToFAQs)
@@ -418,7 +411,9 @@ func main() {
 		port = "8080"
 	}
 	addr := "0.0.0.0:" + port
-	log.Fatal(http.ListenAndServe(addr, router))
+
+	loggedRouter := handlers.CombinedLoggingHandler(os.Stdout, router)
+	log.Fatal(http.ListenAndServe(addr, loggedRouter))
 }
 
 func init() {
