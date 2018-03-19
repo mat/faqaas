@@ -37,7 +37,7 @@ type Category struct {
 }
 
 type FAQ struct {
-	Code     string `json:"code"`
+	ID       int    `json:"id"`
 	Question string `json:"question"`
 	Answer   string `json:"answer"`
 }
@@ -198,18 +198,29 @@ func saveLocale(db *sql.DB, loc *Locale) error {
 }
 
 func saveFAQ(db *sql.DB, faq *FAQ) error {
-	if len(faq.Code) == 0 {
-		faq.Code = randomString(5)
+	if faq.ID > 0 {
+		return updateFAQ(db, faq)
 	}
+	return createFAQ(db, faq)
+}
 
+func createFAQ(db *sql.DB, faq *FAQ) error {
 	sqlStatement := `
-		INSERT INTO faqs (code,question,answer) VALUES ($1, $2, $3)
-		 ON CONFLICT (code)
-		 DO UPDATE SET question = EXCLUDED.question,
-		 answer = EXCLUDED.answer`
-	_, err := db.Exec(sqlStatement, faq.Code, faq.Question, faq.Answer)
+		INSERT INTO faqs (question,answer) VALUES ($1, $2)
+ 		RETURNING id`
+	err := db.QueryRow(sqlStatement, faq.Question, faq.Answer).Scan(&faq.ID)
 	if err != nil {
-		fmt.Print("DB ERR:", err)
+		panic(err)
+	}
+	return err
+}
+
+func updateFAQ(db *sql.DB, faq *FAQ) error {
+	sqlStatement := `
+		UPDATE faqs SET question=$1,answer=$2 WHERE id = $3`
+	_, err := db.Exec(sqlStatement, faq.Question, faq.Answer, faq.ID)
+	if err != nil {
+		panic(err)
 	}
 	return err
 }
@@ -217,9 +228,6 @@ func saveFAQ(db *sql.DB, faq *FAQ) error {
 func deleteLocale(db *sql.DB, loc *Locale) error {
 	sqlStatement := `DELETE FROM locales WHERE code = $1`
 	_, err := db.Exec(sqlStatement, loc.Code)
-	if err != nil {
-		fmt.Print("DB ERR:", err)
-	}
 	return err
 }
 
@@ -276,7 +284,7 @@ func getAllCategories(db *sql.DB) ([]Category, error) {
 }
 
 func getAllFAQs(db *sql.DB) ([]FAQ, error) {
-	rows, err := db.Query("SELECT id, code, question, answer FROM faqs;")
+	rows, err := db.Query("SELECT id, question, answer FROM faqs;")
 	if err != nil {
 		return nil, err
 	}
@@ -284,14 +292,13 @@ func getAllFAQs(db *sql.DB) ([]FAQ, error) {
 	faqs := []FAQ{}
 	for rows.Next() {
 		var id int
-		var code string
 		var question string
 		var answer string
-		err = rows.Scan(&id, &code, &question, &answer)
+		err = rows.Scan(&id, &question, &answer)
 		if err != nil {
 			return nil, err
 		}
-		faqs = append(faqs, FAQ{Code: code, Question: question, Answer: answer})
+		faqs = append(faqs, FAQ{ID: id, Question: question, Answer: answer})
 	}
 
 	err = rows.Err()

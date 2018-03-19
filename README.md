@@ -7,7 +7,6 @@ CREATE TABLE locales (
 
 CREATE TABLE faqs (
   id SERIAL PRIMARY KEY,
-  code TEXT UNIQUE NOT NULL,
   question TEXT,
   answer TEXT
 );
