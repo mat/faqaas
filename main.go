@@ -146,6 +146,26 @@ func postFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 }
 
+func deleteFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	decoder := json.NewDecoder(r.Body)
+	var faq FAQ
+	err := decoder.Decode(&faq)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	err = deleteFAQ(db, &faq)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		// Write JSON result
+		w.Header().Set("Content-Type", "application/json")
+		enc := json.NewEncoder(w)
+		enc.Encode(Error{Error: err.Error()})
+	}
+}
+
 func getLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if err := db.Ping(); err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -222,6 +242,13 @@ func updateFAQ(db *sql.DB, faq *FAQ) error {
 	if err != nil {
 		panic(err)
 	}
+	return err
+}
+
+func deleteFAQ(db *sql.DB, faq *FAQ) error {
+	sqlStatement := `
+		DELETE FROM faqs WHERE id=$1`
+	_, err := db.Exec(sqlStatement, faq.ID)
 	return err
 }
 
@@ -412,6 +439,7 @@ func main() {
 
 	router.GET("/api/faqs", getFAQs)
 	router.POST("/api/faqs", postFAQs)
+	router.DELETE("/api/faqs", deleteFAQs)
 
 	port := os.Getenv("PORT")
 	if port == "" {
