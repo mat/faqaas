@@ -441,6 +441,8 @@ func main() {
 	router.POST("/api/faqs", postFAQs)
 	router.DELETE("/api/faqs", deleteFAQs)
 
+	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
