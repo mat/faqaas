@@ -8,6 +8,8 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -86,6 +88,21 @@ func redirectToFAQs(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 func getFAQsHTML(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	fmt.Fprint(w, "Welcome!\n")
 	fmt.Fprint(w, p.ByName("locale"))
+}
+
+func getSingleFAQHTML(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	fmt.Fprint(w, "Welcome!\n")
+	fmt.Fprint(w, "locale=", p.ByName("locale"), "\n")
+	fmt.Fprint(w, "id=", p.ByName("id"), "\n")
+
+	idPart := p.ByName("id")
+	parts := strings.Split(idPart, "-")
+	lastPart := parts[len(parts)-1]
+	id, err := strconv.Atoi(lastPart)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Fprint(w, "id=", id, "\n")
 }
 
 func IndexNoLocale(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -429,6 +446,7 @@ func main() {
 	router.GET("/", redirectToFAQs)
 	router.GET("/faqs/", redirectToFAQs)
 	router.GET("/faqs/:locale", getFAQsHTML)
+	router.GET("/faq/:locale/:id", getSingleFAQHTML)
 
 	router.GET("/api/locales", getLocales)
 	router.PUT("/api/locales", putLocales)
