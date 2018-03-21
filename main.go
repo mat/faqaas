@@ -15,7 +15,9 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/julienschmidt/httprouter"
 	_ "github.com/lib/pq"
+
 	"golang.org/x/text/language"
+	"golang.org/x/text/language/display"
 )
 
 var db *sql.DB
@@ -429,6 +431,8 @@ func main() {
 
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
 
+	languageFun()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -442,12 +446,32 @@ func main() {
 var languageMatcher language.Matcher
 var supportedLocales []Locale
 
+func languageFun() {
+	supported := []string{
+		"en-US", "en-GB", "ja", "zh", "zh-Hans", "zh-Hant", "pt", "pt-PT", "ko", "ar", "el", "ru", "uk", "pa",
+	}
+
+	en := display.English.Languages()
+
+	for _, s := range supported {
+		t := language.MustParse(s)
+		fmt.Printf("%-20s (%s)\n", en.Name(t), display.Self.Name(t))
+	}
+}
+
 func init() {
 	locales := strings.Split(os.Getenv("SUPPORTED_LOCALES"), ",")
 
 	supportedLocales = []Locale{}
+	en := display.English.Tags()
 	for _, code := range locales {
-		supportedLocales = append(supportedLocales, Locale{Code: code})
+		tag, err := language.Parse(code)
+		if err != nil {
+			panic(nil)
+		}
+		fmt.Println(en.Name(tag))
+		fmt.Println(display.Self.Name(tag))
+		supportedLocales = append(supportedLocales, Locale{Code: code, Name: display.Self.Name(tag) + " (" + en.Name(tag) + ")"})
 	}
 
 	languageMatcher = buildLanguageMatcher()
