@@ -1,0 +1,6 @@
+#!/bin/bash
+set -euxo pipefail
+
+export PORT=8080
+
+go run main.go
