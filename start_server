@@ -2,5 +2,6 @@
 set -euxo pipefail
 
 export PORT=8080
+export SUPPORTED_LOCALES=en,de,fr,es,ar,zh
 
 go run main.go

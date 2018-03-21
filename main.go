@@ -49,37 +49,9 @@ type Error struct {
 }
 
 func redirectToFAQs(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-
-	locales, err := getAllLocales(db)
-	if err != nil {
-		panic(err)
-	}
-	supported := []language.Tag{}
-	for _, loc := range locales {
-		tag, err := language.Parse(loc.Code)
-		if err != nil {
-			panic(nil)
-		}
-		supported = append(supported, tag)
-	}
-
-	// var supported = []language.Tag{
-	// 	language.AmericanEnglish,    // en-US: first language is fallback
-	// 	language.German,             // de
-	// 	language.Dutch,              // nl
-	// 	language.Portuguese,         // pt (defaults to Brazilian)
-	// 	language.EuropeanPortuguese, // pt-pT
-	// 	language.Romanian,           // ro
-	// 	language.Serbian,            // sr (defaults to Cyrillic script)
-	// 	language.SerbianLatin,       // sr-Latn
-	// 	language.SimplifiedChinese,  // zh-Hans
-	// 	language.TraditionalChinese, // zh-Hant
-	// }
-	var matcher = language.NewMatcher(supported)
-
 	lang, _ := r.Cookie("lang")
 	accept := r.Header.Get("Accept-Language")
-	tag, _ := language.MatchStrings(matcher, lang.String(), accept)
+	tag, _ := language.MatchStrings(languageMatcher, lang.String(), accept)
 
 	redirectURL := fmt.Sprintf("/faqs/%s", tag)
 	http.Redirect(w, r, redirectURL, http.StatusFound)
@@ -189,11 +161,7 @@ func getLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	locales, err := getAllLocales(db)
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
+	locales := supportedLocales
 
 	// Write JSON result
 	w.Header().Set("Content-Type", "application/json")
@@ -471,6 +439,50 @@ func main() {
 	log.Fatal(http.ListenAndServe(addr, loggedRouter))
 }
 
+var languageMatcher language.Matcher
+var supportedLocales []Locale
+
 func init() {
+	locales := strings.Split(os.Getenv("SUPPORTED_LOCALES"), ",")
+
+	supportedLocales = []Locale{}
+	for _, code := range locales {
+		supportedLocales = append(supportedLocales, Locale{Code: code})
+	}
+
+	languageMatcher = buildLanguageMatcher()
 	rand.Seed(time.Now().UnixNano())
+}
+
+func buildLanguageMatcher() language.Matcher {
+	supportedLocales := parseLocales(os.Getenv("SUPPORTED_LOCALES"))
+	return language.NewMatcher(supportedLocales)
+}
+
+func parseLocales(supportedLocales string) []language.Tag {
+	locales := strings.Split(supportedLocales, ",")
+
+	supported := []language.Tag{}
+	for _, loc := range locales {
+		tag, err := language.Parse(loc)
+		if err != nil {
+			panic(nil)
+		}
+		supported = append(supported, tag)
+	}
+
+	return supported
+
+	// var supported = []language.Tag{
+	// 	language.AmericanEnglish,    // en-US: first language is fallback
+	// 	language.German,             // de
+	// 	language.Dutch,              // nl
+	// 	language.Portuguese,         // pt (defaults to Brazilian)
+	// 	language.EuropeanPortuguese, // pt-pT
+	// 	language.Romanian,           // ro
+	// 	language.Serbian,            // sr (defaults to Cyrillic script)
+	// 	language.SerbianLatin,       // sr-Latn
+	// 	language.SimplifiedChinese,  // zh-Hans
+	// 	language.TraditionalChinese, // zh-Hant
+	// }
 }
