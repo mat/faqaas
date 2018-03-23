@@ -443,8 +443,6 @@ func main() {
 
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
 
-	languageFun()
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -457,19 +455,6 @@ func main() {
 
 var languageMatcher language.Matcher
 var supportedLocales []Locale
-
-func languageFun() {
-	supported := []string{
-		"en-US", "en-GB", "ja", "zh", "zh-Hans", "zh-Hant", "pt", "pt-PT", "ko", "ar", "el", "ru", "uk", "pa",
-	}
-
-	en := display.English.Languages()
-
-	for _, s := range supported {
-		t := language.MustParse(s)
-		fmt.Printf("%-20s (%s)\n", en.Name(t), display.Self.Name(t))
-	}
-}
 
 func init() {
 	locales := strings.Split(os.Getenv("SUPPORTED_LOCALES"), ",")
