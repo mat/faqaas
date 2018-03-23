@@ -23,14 +23,6 @@ import (
 
 var db *sql.DB
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "mat"
-	dbname   = "faqaas"
-	password = ""
-)
-
 type Locale struct {
 	Code          string `json:"code"`
 	Name          string `json:"name"`
@@ -414,24 +406,21 @@ func main() {
 	// db, err := sql.Open("postgres", connStr)
 
 	databaseURL := os.Getenv("DATABASE_URL")
-	var err error
 	if databaseURL != "" {
+		var err error
 		db, err = sql.Open("postgres", databaseURL)
+		if err != nil {
+			panic(err)
+		}
 	} else {
-		psqlInfo := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable",
-			host, port, user, dbname)
-		db, err = sql.Open("postgres", psqlInfo)
-	}
-	if err != nil {
-		panic(err)
+		panic("DATABASE_URL not set")
 	}
 	defer db.Close()
 
-	err = db.Ping()
+	err := db.Ping()
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Successfully connected!")
 
 	router := httprouter.New()
 	router.GET("/", redirectToFAQs)
