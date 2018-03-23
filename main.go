@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"math/rand"
 	"net/http"
@@ -31,8 +32,9 @@ const (
 )
 
 type Locale struct {
-	Code string `json:"code"`
-	Name string `json:"name"`
+	Code          string `json:"code"`
+	Name          string `json:"name"`
+	DefaultLocale bool   `json:"default_locale"`
 }
 
 type Category struct {
@@ -386,6 +388,25 @@ func createCategory(db *sql.DB) (*Category, error) {
 	return &category, err
 }
 
+type LocalesPageData struct {
+	PageTitle string
+	Locales   []Locale
+}
+
+var tmplAdminLocales *template.Template
+
+func init() {
+	tmplAdminLocales = template.Must(template.ParseFiles("admin/templates/locales.html"))
+}
+
+func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	data := LocalesPageData{
+		PageTitle: "Admin / Locales",
+		Locales:   supportedLocales,
+	}
+	tmplAdminLocales.Execute(w, data)
+}
+
 func main() {
 	// connStr := "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
 	// connStr := fmt.Sprintf("postgres://mat:@localhost/faqaas?sslmode=disable",
@@ -428,6 +449,8 @@ func main() {
 	router.GET("/api/faqs", getFAQs)
 	router.POST("/api/faqs", postFAQs)
 	router.DELETE("/api/faqs", deleteFAQs)
+
+	router.GET("/admin/locales", getAdminLocales)
 
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
 
@@ -472,6 +495,9 @@ func init() {
 		fmt.Println(en.Name(tag))
 		fmt.Println(display.Self.Name(tag))
 		supportedLocales = append(supportedLocales, Locale{Code: code, Name: display.Self.Name(tag) + " (" + en.Name(tag) + ")"})
+	}
+	if len(supportedLocales) >= 1 {
+		supportedLocales[0].DefaultLocale = true
 	}
 
 	languageMatcher = buildLanguageMatcher()
