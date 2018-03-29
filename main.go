@@ -380,15 +380,35 @@ func createCategory(db *sql.DB) (*Category, error) {
 	return &category, err
 }
 
+type FAQsPageData struct {
+	PageTitle string
+	Locales   []Locale
+	FAQs      []FAQ
+}
+
 type LocalesPageData struct {
 	PageTitle string
 	Locales   []Locale
 }
 
+var tmplAdminFAQs *template.Template
 var tmplAdminLocales *template.Template
 
 func init() {
+	tmplAdminFAQs = template.Must(template.ParseFiles("admin/templates/faqs.html"))
 	tmplAdminLocales = template.Must(template.ParseFiles("admin/templates/locales.html"))
+}
+
+func getAdminFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	faqs, err := getAllFAQs(db)
+	if err != nil {
+		panic(err)
+	}
+	data := FAQsPageData{
+		PageTitle: "Admin / FAQsxxx",
+		FAQs:      faqs,
+	}
+	tmplAdminFAQs.Execute(w, data)
 }
 
 func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -439,6 +459,7 @@ func main() {
 	router.POST("/api/faqs", postFAQs)
 	router.DELETE("/api/faqs", deleteFAQs)
 
+	router.GET("/admin/faqs", getAdminFAQs)
 	router.GET("/admin/locales", getAdminLocales)
 
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))

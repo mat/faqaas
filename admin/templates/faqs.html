@@ -56,6 +56,11 @@
 
     <main role="main" class="container">
 
+      <div class="starter-template">
+        <h1>FAQs</h1>
+        <p class="lead">These FAQs are available.</p>
+      </div>
+
       <div>
         <a class="btn btn-primary" href="/admin/faqs/new" role="button">New FAQ...</a>
       </div>
@@ -76,25 +81,17 @@
             <tr>
               <th scope="col">#</th>
               <th scope="col">FAQ</th>
-              <th scope="col">Languages</th>
+              <th scope="col">Languagesxxx</th>
             </tr>
           </thead>
           <tbody>
+            {{range .FAQs}}
             <tr>
-              <th scope="row">1</th>
-              <td>Mark</td>
-              <td>Otto</td>
+              <td>{{.ID}}</td>
+              <td>{{.Question}}</td>
+              <td>xxx</td>
             </tr>
-            <tr>
-              <th scope="row">2</th>
-              <td>Jacob</td>
-              <td>Thornton</td>
-            </tr>
-            <tr>
-              <th scope="row">3</th>
-              <td>Larry</td>
-              <td>the Bird</td>
-            </tr>
+            {{end}}
           </tbody>
         </table>
       </div>
