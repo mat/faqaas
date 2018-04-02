@@ -317,6 +317,32 @@ func getAllFAQs(db *sql.DB) ([]FAQ, error) {
 	return faqs, nil
 }
 
+func getFAQ(db *sql.DB, id int) (*FAQ, error) {
+	rows, err := db.Query("SELECT id, question, answer FROM faqs WHERE id=$1;", id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	faqs := []FAQ{}
+	for rows.Next() {
+		var id int
+		var question string
+		var answer string
+		err = rows.Scan(&id, &question, &answer)
+		if err != nil {
+			return nil, err
+		}
+		faqs = append(faqs, FAQ{ID: id, Question: question, Answer: answer})
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return &faqs[0], nil
+}
+
 func getCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	categories, err := getAllCategories(db)
 	if err != nil {
@@ -393,10 +419,12 @@ type LocalesPageData struct {
 
 var tmplAdminFAQs *template.Template
 var tmplAdminLocales *template.Template
+var tmplAdminFAQEdit *template.Template
 
 func init() {
 	tmplAdminFAQs = template.Must(template.ParseFiles("admin/templates/faqs.html"))
 	tmplAdminLocales = template.Must(template.ParseFiles("admin/templates/locales.html"))
+	tmplAdminFAQEdit = template.Must(template.ParseFiles("admin/templates/faqs_edit.html"))
 }
 
 func getAdminFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -409,6 +437,24 @@ func getAdminFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		FAQs:      faqs,
 	}
 	tmplAdminFAQs.Execute(w, data)
+}
+
+func getAdminFAQsEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	idStr := ps.ByName("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		panic(err)
+	}
+
+	faq, err := getFAQ(db, id)
+	if err != nil {
+		panic(err)
+	}
+	data := FAQsPageData{
+		PageTitle: "Admin / Edit FAQ",
+		FAQs:      []FAQ{*faq},
+	}
+	tmplAdminFAQEdit.Execute(w, data)
 }
 
 func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -461,6 +507,7 @@ func main() {
 
 	router.GET("/admin/faqs", getAdminFAQs)
 	router.GET("/admin/locales", getAdminLocales)
+	router.GET("/admin/faqs/edit/:id", getAdminFAQsEdit)
 
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
 
