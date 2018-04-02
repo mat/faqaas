@@ -67,14 +67,16 @@
               <th scope="col">#</th>
               <th scope="col">FAQ</th>
               <th scope="col">Languages</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {{range .FAQs}}
             <tr>
               <td>{{.ID}}</td>
-              <td>{{.Question}}</td>
               <td>xxx</td>
+              <td>yyy</td>
+              <td><a class="btn btn-secondary" href="/admin/faqs/edit/{{.ID}}" role="button">Edit</a></td>
             </tr>
             {{end}}
           </tbody>

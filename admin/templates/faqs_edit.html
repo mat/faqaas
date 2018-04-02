@@ -66,7 +66,7 @@
           <form>
               <div class="form-group">
                 <label for="exampleFormControlInput1">ID</label>
-                <input type="id" readonly class="form-control" id="exampleFormControlInput1" placeholder="fooxxx">
+                <input type="id" readonly class="form-control" id="exampleFormControlInput1" placeholder="{{.FAQ.ID}}">
               </div>
               <!-- <div class="form-group">
                 <label for="exampleFormControlInput1">Email address</label>
@@ -108,17 +108,17 @@
         <table class="table table-striped">
           <thead>
             <tr>
-              <th scope="col">#</th>
-              <th scope="col">FAQ</th>
-              <th scope="col">Languages</th>
+              <th scope="col">Locale</th>
+              <th scope="col">Question</th>
+              <th scope="col">Answer</th>
             </tr>
           </thead>
           <tbody>
-            {{range .FAQs}}
+            {{range .FAQ.Texts}}
             <tr>
-              <td>{{.ID}}</td>
+              <td>{{.Locale.Code}}</td>
+              <td>{{.Answer}}</td>
               <td>{{.Question}}</td>
-              <td>xxx</td>
             </tr>
             {{end}}
           </tbody>

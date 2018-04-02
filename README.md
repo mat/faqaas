@@ -1,3 +1,9 @@
+
+```
+psql -U postgres
+\c faqaas
+```
+
 ```sql
 CREATE TABLE locales (
   id SERIAL PRIMARY KEY,
@@ -10,6 +16,15 @@ CREATE TABLE faqs (
   question TEXT,
   answer TEXT
 );
+
+CREATE TABLE faq_texts (
+  id SERIAL PRIMARY KEY,
+  faq_id INTEGER REFERENCES faqs (id),
+  locale TEXT,
+  question TEXT,
+  answer TEXT
+);
+
 
 
 CREATE TABLE categories (
@@ -33,6 +48,10 @@ INSERT INTO locales (code,name) VALUES ('en', 'English') ON CONFLICT (code) DO N
 INSERT INTO locales (code,name) VALUES ('fr', 'French') ON CONFLICT (code) DO NOTHING;
 
 SELECT * FROM locales;
+
+
+INSERT INTO faq_texts (faq_id,locale,question,answer) VALUES (10,'de', 'Wer hat an der Uhr gedreht?', 'Paulchen Panter');
+
 ```
 
 ## GET /locales

@@ -35,7 +35,13 @@ type Category struct {
 }
 
 type FAQ struct {
+	ID    int       `json:"id"`
+	Texts []FAQText `json:"texts"`
+}
+
+type FAQText struct {
 	ID       int    `json:"id"`
+	Locale   Locale `json:"locale"`
 	Question string `json:"question"`
 	Answer   string `json:"answer"`
 }
@@ -206,24 +212,26 @@ func saveFAQ(db *sql.DB, faq *FAQ) error {
 }
 
 func createFAQ(db *sql.DB, faq *FAQ) error {
-	sqlStatement := `
-		INSERT INTO faqs (question,answer) VALUES ($1, $2)
- 		RETURNING id`
-	err := db.QueryRow(sqlStatement, faq.Question, faq.Answer).Scan(&faq.ID)
-	if err != nil {
-		panic(err)
-	}
-	return err
+	// sqlStatement := `
+	// 	INSERT INTO faqs (question,answer) VALUES ($1, $2)
+	// 	RETURNING id`
+	// err := db.QueryRow(sqlStatement, faq.Question, faq.Answer).Scan(&faq.ID)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// return err
+	return nil
 }
 
 func updateFAQ(db *sql.DB, faq *FAQ) error {
-	sqlStatement := `
-		UPDATE faqs SET question=$1,answer=$2 WHERE id = $3`
-	_, err := db.Exec(sqlStatement, faq.Question, faq.Answer, faq.ID)
-	if err != nil {
-		panic(err)
-	}
-	return err
+	// sqlStatement := `
+	// 	UPDATE faqs SET question=$1,answer=$2 WHERE id = $3`
+	// _, err := db.Exec(sqlStatement, faq.Question, faq.Answer, faq.ID)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// return err
+	return nil
 }
 
 func deleteFAQ(db *sql.DB, faq *FAQ) error {
@@ -292,21 +300,28 @@ func getAllCategories(db *sql.DB) ([]Category, error) {
 }
 
 func getAllFAQs(db *sql.DB) ([]FAQ, error) {
-	rows, err := db.Query("SELECT id, question, answer FROM faqs;")
+	rows, err := db.Query("SELECT id FROM faqs ORDER BY id;")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+
 	faqs := []FAQ{}
 	for rows.Next() {
 		var id int
-		var question string
-		var answer string
-		err = rows.Scan(&id, &question, &answer)
+		err = rows.Scan(&id)
 		if err != nil {
 			return nil, err
 		}
-		faqs = append(faqs, FAQ{ID: id, Question: question, Answer: answer})
+
+		faq := FAQ{ID: id}
+		texts, err := getTextForFAQ(db, id)
+		if err != nil {
+			panic(err)
+		}
+
+		faq.Texts = texts
+		faqs = append(faqs, faq)
 	}
 
 	err = rows.Err()
@@ -317,22 +332,25 @@ func getAllFAQs(db *sql.DB) ([]FAQ, error) {
 	return faqs, nil
 }
 
-func getFAQ(db *sql.DB, id int) (*FAQ, error) {
-	rows, err := db.Query("SELECT id, question, answer FROM faqs WHERE id=$1;", id)
+func getTextForFAQ(db *sql.DB, faqID int) ([]FAQText, error) {
+	rows, err := db.Query("SELECT id, locale, question, answer FROM faq_texts WHERE faq_id = $1;", faqID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	faqs := []FAQ{}
+	texts := []FAQText{}
 	for rows.Next() {
 		var id int
+		var localeCode string
 		var question string
 		var answer string
-		err = rows.Scan(&id, &question, &answer)
+		err = rows.Scan(&id, &localeCode, &question, &answer)
 		if err != nil {
 			return nil, err
 		}
-		faqs = append(faqs, FAQ{ID: id, Question: question, Answer: answer})
+		l := Locale{Code: localeCode}
+		t := FAQText{Locale: l, Question: question, Answer: answer}
+		texts = append(texts, t)
 	}
 
 	err = rows.Err()
@@ -340,7 +358,35 @@ func getFAQ(db *sql.DB, id int) (*FAQ, error) {
 		return nil, err
 	}
 
-	return &faqs[0], nil
+	return texts, nil
+}
+
+func getFAQ(db *sql.DB, id int) (*FAQ, error) {
+	rows, err := db.Query("SELECT faq_texts.locale, faq_texts.question, faq_texts.answer FROM faqs, faq_texts WHERE faqs.id = $1 AND faq_texts.faq_id = $1;", id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	faq := FAQ{ID: id}
+	faq.Texts = []FAQText{}
+	for rows.Next() {
+		var locale string
+		var question string
+		var answer string
+		err = rows.Scan(&locale, &question, &answer)
+		if err != nil {
+			return nil, err
+		}
+		loc := Locale{Code: locale}
+		faq.Texts = append(faq.Texts, FAQText{Locale: loc, Question: question, Answer: answer})
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return &faq, nil
 }
 
 func getCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -412,6 +458,12 @@ type FAQsPageData struct {
 	FAQs      []FAQ
 }
 
+type FAQEditPageData struct {
+	PageTitle string
+	Locales   []Locale
+	FAQ       FAQ
+}
+
 type LocalesPageData struct {
 	PageTitle string
 	Locales   []Locale
@@ -450,9 +502,9 @@ func getAdminFAQsEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	if err != nil {
 		panic(err)
 	}
-	data := FAQsPageData{
+	data := FAQEditPageData{
 		PageTitle: "Admin / Edit FAQ",
-		FAQs:      []FAQ{*faq},
+		FAQ:       *faq,
 	}
 	tmplAdminFAQEdit.Execute(w, data)
 }
