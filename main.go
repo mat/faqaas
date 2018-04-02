@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -479,6 +480,13 @@ func init() {
 	tmplAdminFAQEdit = template.Must(template.ParseFiles("admin/templates/faqs_edit.html"))
 }
 
+func mustExecuteTemplate(tmpl *template.Template, wr io.Writer, data interface{}) {
+	err := tmpl.Execute(wr, data)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func getAdminFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	faqs, err := getAllFAQs(db)
 	if err != nil {
@@ -488,7 +496,7 @@ func getAdminFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		PageTitle: "Admin / FAQsxxx",
 		FAQs:      faqs,
 	}
-	tmplAdminFAQs.Execute(w, data)
+	mustExecuteTemplate(tmplAdminFAQs, w, data)
 }
 
 func getAdminFAQsEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -506,7 +514,7 @@ func getAdminFAQsEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		PageTitle: "Admin / Edit FAQ",
 		FAQ:       *faq,
 	}
-	tmplAdminFAQEdit.Execute(w, data)
+	mustExecuteTemplate(tmplAdminFAQEdit, w, data)
 }
 
 func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -514,7 +522,7 @@ func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		PageTitle: "Admin / Locales",
 		Locales:   supportedLocales,
 	}
-	tmplAdminLocales.Execute(w, data)
+	mustExecuteTemplate(tmplAdminLocales, w, data)
 }
 
 func main() {
