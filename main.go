@@ -510,6 +510,23 @@ func getAdminFAQsEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	if err != nil {
 		panic(err)
 	}
+
+	m := make(map[string]FAQText)
+	for _, text := range faq.Texts {
+		m[text.Locale.Code] = text
+	}
+
+	faq.Texts = []FAQText{}
+	for _, loc := range supportedLocales {
+		t := FAQText{Locale: loc}
+		t2, ok := m[loc.Code]
+		if ok {
+			t2.Locale = t.Locale
+			t = t2
+		}
+		faq.Texts = append(faq.Texts, t)
+	}
+
 	data := FAQEditPageData{
 		PageTitle: "Admin / Edit FAQ",
 		FAQ:       *faq,
