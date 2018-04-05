@@ -41,7 +41,7 @@
     <div class="container">
 
       {{range .FAQ.Texts}}
-      <h2>{{.Locale.Code}}</h2>
+      <h2>{{.Locale.Name}}</h2>
       <form action="/admin/faqs/update" method="post">
         <input type="hidden" name="faqID" value="{{$.FAQ.ID}}">
         <input type="hidden" name="localeCode" value="{{.Locale.Code}}">
