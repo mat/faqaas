@@ -493,7 +493,7 @@ func getAdminFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		panic(err)
 	}
 	data := FAQsPageData{
-		PageTitle: "Admin / FAQsxxx",
+		PageTitle: "Admin / FAQs",
 		FAQs:      faqs,
 	}
 	mustExecuteTemplate(tmplAdminFAQs, w, data)
