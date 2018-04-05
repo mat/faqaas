@@ -75,3 +75,11 @@ INSERT INTO faq_texts (faq_id,locale,question,answer) VALUES (10,'de', 'Wer hat 
 	{
 		"name": "German"
 	}
+
+
+## Heroku / Setup
+
+
+```bash
+heroku labs:enable runtime-dyno-metadata
+```
