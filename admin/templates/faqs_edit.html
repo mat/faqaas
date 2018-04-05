@@ -65,11 +65,11 @@
         <input type="hidden" name="localeCode" value="{{.Locale.Code}}">
         <div class="form-group">
           <label for="question">Question</label>
-          <input type="text" class="form-control" name="question" value="{{.Question}}">
+          <input type="text" class="form-control" name="question" value="{{.Question}}" placeholder="Question">
         </div>
         <div class="form-group">
           <label for="answer">Answer</label>
-          <textarea class="form-control" name="answer" rows="10">{{.Answer}}</textarea>
+          <textarea class="form-control" name="answer" rows="10" placeholder="Lorem Ipsum.....">{{.Answer}}</textarea>
         </div>
         <button type="submit" class="btn btn-primary mb-2">Save</button>
       </form>
