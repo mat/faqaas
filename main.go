@@ -41,7 +41,7 @@ type FAQ struct {
 }
 
 type FAQText struct {
-	ID       int    `json:"id"`
+	iD       int
 	Locale   Locale `json:"locale"`
 	Question string `json:"question"`
 	Answer   string `json:"answer"`
@@ -199,6 +199,21 @@ func saveLocale(db *sql.DB, loc *Locale) error {
 		 ON CONFLICT (code)
 		 DO UPDATE SET name = EXCLUDED.name`
 	_, err = db.Exec(sqlStatement, loc.Code, loc.Name)
+	if err != nil {
+		fmt.Print("DB ERR:", err)
+	}
+	return err
+}
+
+func saveFAQText(db *sql.DB, faqID int, text *FAQText) error {
+	// INSERT INTO locales (code,name) VALUES ('en', 'English') ON CONFLICT (code) DO NOTHING;
+	// INSERT INTO faq_texts (faq_id,locale,question,answer) VALUES (10,'en', 'Who did fiddle the clock around?', 'Paul Panther');
+	// ON CONFLICT  DO UPDATE SET name = EXCLUDED.name;
+	sqlStatement := `
+		INSERT INTO faq_texts (faq_id,locale,question,answer)
+		VALUES ($1, $2, $3, $4)
+		`
+	_, err := db.Exec(sqlStatement, faqID, text.Locale.Code, text.Question, text.Answer)
 	if err != nil {
 		fmt.Print("DB ERR:", err)
 	}
@@ -534,6 +549,44 @@ func getAdminFAQsEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	mustExecuteTemplate(tmplAdminFAQEdit, w, data)
 }
 
+type faqForm struct {
+	faqID      string
+	localeCode string
+	question   string
+	answer     string
+}
+
+func postAdminFAQsUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	form := faqForm{
+		faqID:      r.FormValue("faqID"),
+		localeCode: r.FormValue("localeCode"),
+		question:   r.FormValue("question"),
+		answer:     r.FormValue("answer"),
+	}
+
+	loc := Locale{Code: form.localeCode}
+	text := FAQText{Question: form.question, Answer: form.answer, Locale: loc}
+
+	faqID, err := strconv.Atoi(form.faqID)
+	if err != nil {
+		panic(err)
+	}
+
+	err = saveFAQText(db, faqID, &text)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		// Write JSON result
+		w.Header().Set("Content-Type", "application/json")
+		enc := json.NewEncoder(w)
+		enc.Encode(Error{Error: err.Error()})
+	} else {
+		// Write JSON result
+		w.Header().Set("Content-Type", "application/json")
+		enc := json.NewEncoder(w)
+		enc.Encode(text)
+	}
+}
+
 func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	data := LocalesPageData{
 		PageTitle: "Admin / Locales",
@@ -585,6 +638,7 @@ func main() {
 	router.GET("/admin/faqs", getAdminFAQs)
 	router.GET("/admin/locales", getAdminLocales)
 	router.GET("/admin/faqs/edit/:id", getAdminFAQsEdit)
+	router.POST("/admin/faqs/update", postAdminFAQsUpdate)
 
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
 
