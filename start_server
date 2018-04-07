@@ -3,6 +3,6 @@ set -euxo pipefail
 
 export DATABASE_URL=postgres://mat:@localhost/faqaas?sslmode=disable
 export PORT=8080
-export SUPPORTED_LOCALES=en,de,fr,es,ar,zh
+export SUPPORTED_LOCALES=en,de,fr,es,it,nl,pt,pt-BR,da,sv,no,ru,ar,zh
 
 go run main.go
