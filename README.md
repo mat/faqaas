@@ -22,9 +22,9 @@ CREATE TABLE faq_texts (
   faq_id INTEGER REFERENCES faqs (id),
   locale TEXT,
   question TEXT,
-  answer TEXT
+  answer TEXT,
+  CONSTRAINT texts_faq_id_locale unique(faq_id,locale)
 );
-
 
 
 CREATE TABLE categories (

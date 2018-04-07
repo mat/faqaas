@@ -206,12 +206,13 @@ func saveLocale(db *sql.DB, loc *Locale) error {
 }
 
 func saveFAQText(db *sql.DB, faqID int, text *FAQText) error {
-	// INSERT INTO locales (code,name) VALUES ('en', 'English') ON CONFLICT (code) DO NOTHING;
-	// INSERT INTO faq_texts (faq_id,locale,question,answer) VALUES (10,'en', 'Who did fiddle the clock around?', 'Paul Panther');
-	// ON CONFLICT  DO UPDATE SET name = EXCLUDED.name;
 	sqlStatement := `
 		INSERT INTO faq_texts (faq_id,locale,question,answer)
 		VALUES ($1, $2, $3, $4)
+		ON CONFLICT ON CONSTRAINT texts_faq_id_locale
+		  DO UPDATE SET
+		   question = EXCLUDED.question,
+		   answer = EXCLUDED.answer;
 		`
 	_, err := db.Exec(sqlStatement, faqID, text.Locale.Code, text.Question, text.Answer)
 	if err != nil {
