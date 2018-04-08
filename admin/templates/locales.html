@@ -52,7 +52,7 @@
             <td>{{.Code}}</td>
             <td>
               {{.Name}}
-              {{if .DefaultLocale}}<span class="badge badge-pill badge-primary">default</span>{{end}}
+              {{if .IsDefaultLocale}}<span class="badge badge-pill badge-primary">default</span>{{end}}
             </td>
           </tr>
           {{end}}

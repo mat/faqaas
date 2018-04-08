@@ -25,9 +25,12 @@ import (
 var db *sql.DB
 
 type Locale struct {
-	Code          string `json:"code"`
-	Name          string `json:"name"`
-	DefaultLocale bool   `json:"default_locale"`
+	Code string `json:"code"`
+	Name string `json:"name"`
+}
+
+func (l *Locale) IsDefaultLocale() bool {
+	return l.Code == getDefaultLocale().Code
 }
 
 type Category struct {
@@ -41,13 +44,12 @@ type FAQ struct {
 }
 
 func (f *FAQ) TextInDefaultLocale() FAQText {
-	defaultLocale := getDefaultLocale()
 	for _, t := range f.Texts {
-		if t.Locale.Code == defaultLocale.Code {
+		if t.Locale.IsDefaultLocale() {
 			return t
 		}
 	}
-	return FAQText{Locale: defaultLocale}
+	return FAQText{Locale: getDefaultLocale()}
 }
 
 type FAQText struct {
@@ -683,7 +685,6 @@ func init() {
 	if len(supportedLocales) == 0 {
 		panic("SUPPORTED_LOCALES missing or wrong")
 	}
-	supportedLocales[0].DefaultLocale = true
 
 	languageMatcher = buildLanguageMatcher()
 	rand.Seed(time.Now().UnixNano())
