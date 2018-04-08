@@ -40,6 +40,16 @@ type FAQ struct {
 	Texts []FAQText `json:"texts"`
 }
 
+func (f *FAQ) TextInDefaultLocale() FAQText {
+	defaultLocale := getDefaultLocale()
+	for _, t := range f.Texts {
+		if t.Locale.Code == defaultLocale.Code {
+			return t
+		}
+	}
+	return FAQText{Locale: defaultLocale}
+}
+
 type FAQText struct {
 	iD       int
 	Locale   Locale `json:"locale"`
@@ -670,12 +680,17 @@ func init() {
 		fmt.Println(display.Self.Name(tag))
 		supportedLocales = append(supportedLocales, Locale{Code: code, Name: display.Self.Name(tag) + " (" + en.Name(tag) + ")"})
 	}
-	if len(supportedLocales) >= 1 {
-		supportedLocales[0].DefaultLocale = true
+	if len(supportedLocales) == 0 {
+		panic("SUPPORTED_LOCALES missing or wrong")
 	}
+	supportedLocales[0].DefaultLocale = true
 
 	languageMatcher = buildLanguageMatcher()
 	rand.Seed(time.Now().UnixNano())
+}
+
+func getDefaultLocale() Locale {
+	return supportedLocales[0]
 }
 
 func buildLanguageMatcher() language.Matcher {

@@ -56,8 +56,8 @@
           {{range .FAQs}}
           <tr>
             <td>{{.ID}}</td>
+            <td>{{.TextInDefaultLocale.Question }}</td>
             <td>xxx</td>
-            <td>yyy</td>
             <td><a class="btn btn-outline-secondary" href="/admin/faqs/edit/{{.ID}}" role="button">Edit</a></td>
           </tr>
           {{end}}
