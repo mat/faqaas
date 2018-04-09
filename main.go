@@ -25,8 +25,9 @@ import (
 var db *sql.DB
 
 type Locale struct {
-	Code string `json:"code"`
-	Name string `json:"name"`
+	Code           string `json:"code"`
+	Name           string `json:"name"`        // Name in English
+	NameInLanguage string `json:"locale_name"` // Name in local language
 }
 
 func (l *Locale) IsDefaultLocale() bool {
@@ -98,31 +99,6 @@ func IndexNoLocale(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 
 func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
-}
-
-func putLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	decoder := json.NewDecoder(r.Body)
-	var l Locale
-	err := decoder.Decode(&l)
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	err = saveLocale(db, &l)
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		// Write JSON result
-		w.Header().Set("Content-Type", "application/json")
-		enc := json.NewEncoder(w)
-		enc.Encode(Error{Error: err.Error()})
-	} else {
-		// Write JSON result
-		w.Header().Set("Content-Type", "application/json")
-		enc := json.NewEncoder(w)
-		enc.Encode(l)
-	}
 }
 
 func postFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -200,23 +176,6 @@ func deleteLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 }
 
-func saveLocale(db *sql.DB, loc *Locale) error {
-	_, err := language.Parse(loc.Code)
-	if err != nil {
-		return err
-	}
-
-	sqlStatement := `
-		INSERT INTO locales (code,name) VALUES ($1, $2)
-		 ON CONFLICT (code)
-		 DO UPDATE SET name = EXCLUDED.name`
-	_, err = db.Exec(sqlStatement, loc.Code, loc.Name)
-	if err != nil {
-		fmt.Print("DB ERR:", err)
-	}
-	return err
-}
-
 func saveFAQText(db *sql.DB, faqID int, text *FAQText) error {
 	sqlStatement := `
 		INSERT INTO faq_texts (faq_id,locale,question,answer)
@@ -274,32 +233,6 @@ func deleteLocale(db *sql.DB, loc *Locale) error {
 	sqlStatement := `DELETE FROM locales WHERE code = $1`
 	_, err := db.Exec(sqlStatement, loc.Code)
 	return err
-}
-
-func getAllLocales(db *sql.DB) ([]Locale, error) {
-	rows, err := db.Query("SELECT id, code, name FROM locales;")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	locales := []Locale{}
-	for rows.Next() {
-		var id int
-		var code string
-		var name string
-		err = rows.Scan(&id, &code, &name)
-		if err != nil {
-			return nil, err
-		}
-		locales = append(locales, Locale{Code: code, Name: name})
-	}
-
-	err = rows.Err()
-	if err != nil {
-		return nil, err
-	}
-
-	return locales, nil
 }
 
 func getAllCategories(db *sql.DB) ([]Category, error) {
@@ -638,8 +571,6 @@ func main() {
 	router.GET("/faq/:locale/:id", getSingleFAQHTML)
 
 	router.GET("/api/locales", getLocales)
-	router.PUT("/api/locales", putLocales)
-	router.DELETE("/api/locales", deleteLocales)
 
 	router.GET("/api/categories", getCategories)
 	router.POST("/api/categories", postCategories)
@@ -678,9 +609,8 @@ func init() {
 		if err != nil {
 			panic(nil)
 		}
-		fmt.Println(en.Name(tag))
-		fmt.Println(display.Self.Name(tag))
-		supportedLocales = append(supportedLocales, Locale{Code: code, Name: display.Self.Name(tag) + " (" + en.Name(tag) + ")"})
+		locale := Locale{Code: code, Name: en.Name(tag), NameInLanguage: display.Self.Name(tag)}
+		supportedLocales = append(supportedLocales, locale)
 	}
 	if len(supportedLocales) == 0 {
 		panic("SUPPORTED_LOCALES missing or wrong")
