@@ -420,6 +420,11 @@ type FAQsPageData struct {
 	FAQs      []FAQ
 }
 
+type FAQsNewPageData struct {
+	PageTitle     string
+	DefaultLocale Locale
+}
+
 type FAQEditPageData struct {
 	PageTitle string
 	Locales   []Locale
@@ -432,13 +437,15 @@ type LocalesPageData struct {
 }
 
 var tmplAdminFAQs *template.Template
-var tmplAdminLocales *template.Template
+var tmplAdminFAQsNew *template.Template
 var tmplAdminFAQEdit *template.Template
+var tmplAdminLocales *template.Template
 
 func init() {
 	tmplAdminFAQs = template.Must(template.ParseFiles("admin/templates/faqs.html"))
-	tmplAdminLocales = template.Must(template.ParseFiles("admin/templates/locales.html"))
+	tmplAdminFAQsNew = template.Must(template.ParseFiles("admin/templates/faqs_new.html"))
 	tmplAdminFAQEdit = template.Must(template.ParseFiles("admin/templates/faqs_edit.html"))
+	tmplAdminLocales = template.Must(template.ParseFiles("admin/templates/locales.html"))
 }
 
 func mustExecuteTemplate(tmpl *template.Template, wr io.Writer, data interface{}) {
@@ -458,6 +465,14 @@ func getAdminFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		FAQs:      faqs,
 	}
 	mustExecuteTemplate(tmplAdminFAQs, w, data)
+}
+
+func getAdminFAQsNew(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	data := FAQsNewPageData{
+		PageTitle:     "Admin / New FAQ",
+		DefaultLocale: getDefaultLocale(),
+	}
+	mustExecuteTemplate(tmplAdminFAQsNew, w, data)
 }
 
 func getAdminFAQsEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -582,6 +597,7 @@ func main() {
 	router.GET("/admin/faqs", getAdminFAQs)
 	router.GET("/admin/locales", getAdminLocales)
 	router.GET("/admin/faqs/edit/:id", getAdminFAQsEdit)
+	router.GET("/admin/faqs/new", getAdminFAQsNew)
 	router.POST("/admin/faqs/update", postAdminFAQsUpdate)
 
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
