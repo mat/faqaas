@@ -111,19 +111,19 @@ func postFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 	defer r.Body.Close()
 
-	err = saveFAQ(db, &faq)
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		// Write JSON result
-		w.Header().Set("Content-Type", "application/json")
-		enc := json.NewEncoder(w)
-		enc.Encode(Error{Error: err.Error()})
-	} else {
-		// Write JSON result
-		w.Header().Set("Content-Type", "application/json")
-		enc := json.NewEncoder(w)
-		enc.Encode(faq)
-	}
+	// err = saveFAQ(db, &faq)
+	// if err != nil {
+	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	// 	// Write JSON result
+	// 	w.Header().Set("Content-Type", "application/json")
+	// 	enc := json.NewEncoder(w)
+	// 	enc.Encode(Error{Error: err.Error()})
+	// } else {
+	// 	// Write JSON result
+	// 	w.Header().Set("Content-Type", "application/json")
+	// 	enc := json.NewEncoder(w)
+	// 	enc.Encode(faq)
+	// }
 }
 
 func deleteFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -192,23 +192,14 @@ func saveFAQText(db *sql.DB, faqID int, text *FAQText) error {
 	return err
 }
 
-func saveFAQ(db *sql.DB, faq *FAQ) error {
-	if faq.ID > 0 {
-		return updateFAQ(db, faq)
+func createFAQ(db *sql.DB) (*FAQ, error) {
+	sqlStatement := `INSERT INTO faqs (question) VALUES (NULL) RETURNING id;`
+	faq := FAQ{}
+	err := db.QueryRow(sqlStatement).Scan(&faq.ID)
+	if err != nil {
+		panic(err)
 	}
-	return createFAQ(db, faq)
-}
-
-func createFAQ(db *sql.DB, faq *FAQ) error {
-	// sqlStatement := `
-	// 	INSERT INTO faqs (question,answer) VALUES ($1, $2)
-	// 	RETURNING id`
-	// err := db.QueryRow(sqlStatement, faq.Question, faq.Answer).Scan(&faq.ID)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// return err
-	return nil
+	return &faq, nil
 }
 
 func updateFAQ(db *sql.DB, faq *FAQ) error {
@@ -548,6 +539,41 @@ func postAdminFAQsUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	}
 }
 
+func postAdminFAQsCreate(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	form := faqForm{
+		localeCode: r.FormValue("localeCode"),
+		question:   r.FormValue("question"),
+		answer:     r.FormValue("answer"),
+	}
+
+	loc := Locale{Code: form.localeCode}
+	text := FAQText{Question: form.question, Answer: form.answer, Locale: loc}
+
+	faq, err := createFAQ(db)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		// Write JSON result
+		w.Header().Set("Content-Type", "application/json")
+		enc := json.NewEncoder(w)
+		enc.Encode(Error{Error: err.Error()})
+		return
+	}
+
+	err = saveFAQText(db, faq.ID, &text)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		// Write JSON result
+		w.Header().Set("Content-Type", "application/json")
+		enc := json.NewEncoder(w)
+		enc.Encode(Error{Error: err.Error()})
+	} else {
+		// Write JSON result
+		w.Header().Set("Content-Type", "application/json")
+		enc := json.NewEncoder(w)
+		enc.Encode(text)
+	}
+}
+
 func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	data := LocalesPageData{
 		PageTitle: "Admin / Locales",
@@ -599,6 +625,7 @@ func main() {
 	router.GET("/admin/faqs/edit/:id", getAdminFAQsEdit)
 	router.GET("/admin/faqs/new", getAdminFAQsNew)
 	router.POST("/admin/faqs/update", postAdminFAQsUpdate)
+	router.POST("/admin/faqs/create", postAdminFAQsCreate)
 
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
 
