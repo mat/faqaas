@@ -60,6 +60,15 @@
 
     </div>
 
+    <h2>Destroy</h2>
+    <p class="lead">
+      This will destroy the complete FAQ (all languages). There is no undo.
+    </p>
+    <form action="/admin/faqs/delete" method="post">
+      <input type="hidden" name="faqID" value="{{$.FAQ.ID}}">
+      <button type="submit" class="btn btn-danger">Destroy FAQ</button>
+    </form>
+
   </main><!-- /.container -->
 
   <!-- Bootstrap core JavaScript

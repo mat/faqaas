@@ -136,7 +136,7 @@ func deleteFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 	defer r.Body.Close()
 
-	err = deleteFAQ(db, &faq)
+	err = deleteFAQ(db, faq.ID)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		// Write JSON result
@@ -202,6 +202,18 @@ func createFAQ(db *sql.DB) (*FAQ, error) {
 	return &faq, nil
 }
 
+func deleteFAQ(db *sql.DB, faqID int) error {
+	sqlStatement := `DELETE FROM faq_texts WHERE faq_id = $1;`
+	_, err := db.Exec(sqlStatement, faqID)
+	if err != nil {
+		return err
+	}
+
+	sqlStatement = `DELETE FROM faqs WHERE id = $1;`
+	_, err = db.Exec(sqlStatement, faqID)
+	return err
+}
+
 func updateFAQ(db *sql.DB, faq *FAQ) error {
 	// sqlStatement := `
 	// 	UPDATE faqs SET question=$1,answer=$2 WHERE id = $3`
@@ -211,13 +223,6 @@ func updateFAQ(db *sql.DB, faq *FAQ) error {
 	// }
 	// return err
 	return nil
-}
-
-func deleteFAQ(db *sql.DB, faq *FAQ) error {
-	sqlStatement := `
-		DELETE FROM faqs WHERE id=$1`
-	_, err := db.Exec(sqlStatement, faq.ID)
-	return err
 }
 
 func deleteLocale(db *sql.DB, loc *Locale) error {
@@ -539,6 +544,28 @@ func postAdminFAQsUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	}
 }
 
+func postAdminFAQsDelete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	form := faqForm{
+		faqID: r.FormValue("faqID"),
+	}
+
+	faqID, err := strconv.Atoi(form.faqID)
+	if err != nil {
+		panic(err)
+	}
+
+	err = deleteFAQ(db, faqID)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		// Write JSON result
+		w.Header().Set("Content-Type", "application/json")
+		enc := json.NewEncoder(w)
+		enc.Encode(Error{Error: err.Error()})
+	} else {
+		http.Redirect(w, r, "/admin/faqs", http.StatusFound)
+	}
+}
+
 func postAdminFAQsCreate(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	form := faqForm{
 		localeCode: r.FormValue("localeCode"),
@@ -624,6 +651,7 @@ func main() {
 	router.GET("/admin/faqs/new", getAdminFAQsNew)
 	router.POST("/admin/faqs/update", postAdminFAQsUpdate)
 	router.POST("/admin/faqs/create", postAdminFAQsCreate)
+	router.POST("/admin/faqs/delete", postAdminFAQsDelete)
 
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
 
