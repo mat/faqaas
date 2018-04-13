@@ -21,42 +21,38 @@ CREATE TABLE faq_texts (
 );
 
 
-// Upsert
-INSERT INTO locales (code,name) VALUES ('de', 'German') ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name;
-
-// Do nothing
-INSERT INTO locales (code,name) VALUES ('en', 'English') ON CONFLICT (code) DO NOTHING;
-INSERT INTO locales (code,name) VALUES ('fr', 'French') ON CONFLICT (code) DO NOTHING;
-
-SELECT * FROM locales;
-
-
 INSERT INTO faq_texts (faq_id,locale,question,answer) VALUES (10,'de', 'Wer hat an der Uhr gedreht?', 'Paulchen Panter');
 
 ```
 
 ## GET /locales
-	{
-		"locales": [{
-			"code": "de",
-			"name": "German"
-		}, {
-			"code": "en",
-			"name": "English"
-		}]
-	}
-
-## POST /locales
-	{
-		"code": "de-de",
-		"name": "German"
-	}
-
-## PUT /locales/{code}
-	{
-		"name": "German"
-	}
-
+	[
+	  {
+	    "code": "en",
+	    "name": "English",
+	    "locale_name": "English"
+	  },
+	  {
+	    "code": "fr",
+	    "name": "French",
+	    "locale_name": "français"
+	  },
+	  {
+	    "code": "es",
+	    "name": "Spanish",
+	    "locale_name": "español"
+	  },
+	  {
+	    "code": "pt-BR",
+	    "name": "Brazilian Portuguese",
+	    "locale_name": "português"
+	  },
+	  {
+	    "code": "zh",
+	    "name": "Chinese",
+	    "locale_name": "中文"
+	  }
+	]
 
 ## Heroku / Setup
 
