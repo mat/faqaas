@@ -97,10 +97,6 @@ func IndexNoLocale(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 	fmt.Fprint(w, "Welcome!\n")
 }
 
-func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
-}
-
 func postFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	decoder := json.NewDecoder(r.Body)
 	var faq FAQ
@@ -139,7 +135,7 @@ func deleteFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	err = deleteFAQ(db, faq.ID)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		// Write JSON result
+
 		w.Header().Set("Content-Type", "application/json")
 		enc := json.NewEncoder(w)
 		enc.Encode(Error{Error: err.Error()})
@@ -147,33 +143,11 @@ func deleteFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func getLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	if err := db.Ping(); err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
 	locales := supportedLocales
 
-	// Write JSON result
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 	enc.Encode(locales)
-}
-
-func deleteLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	decoder := json.NewDecoder(r.Body)
-	var l Locale
-	err := decoder.Decode(&l)
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	err = deleteLocale(db, &l)
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
 }
 
 func saveFAQText(db *sql.DB, faqID int, text *FAQText) error {
@@ -223,12 +197,6 @@ func updateFAQ(db *sql.DB, faq *FAQ) error {
 	// }
 	// return err
 	return nil
-}
-
-func deleteLocale(db *sql.DB, loc *Locale) error {
-	sqlStatement := `DELETE FROM locales WHERE code = $1`
-	_, err := db.Exec(sqlStatement, loc.Code)
-	return err
 }
 
 func getAllCategories(db *sql.DB) ([]Category, error) {
@@ -386,19 +354,8 @@ func postCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	enc.Encode(category)
 }
 
-// https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-golang/22892986#22892986
-var letters = []rune("01234567890ABCDEFGHIJKLMNPQRSTUVWXYZ")
-
-func randomString(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(b)
-}
-
 func createCategory(db *sql.DB) (*Category, error) {
-	category := Category{Code: randomString(5)}
+	category := Category{Code: "deadbeef"}
 
 	sqlStatement := `
 		INSERT INTO categories (code) VALUES ($1)`
@@ -608,11 +565,6 @@ func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 }
 
 func main() {
-	// connStr := "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
-	// connStr := fmt.Sprintf("postgres://mat:@localhost/faqaas?sslmode=disable",
-	// host, port, user, dbname)
-	// db, err := sql.Open("postgres", connStr)
-
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL != "" {
 		var err error
