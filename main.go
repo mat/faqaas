@@ -408,6 +408,10 @@ func mustExecuteTemplate(tmpl *template.Template, wr io.Writer, data interface{}
 	}
 }
 
+func getAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	http.Redirect(w, r, "/admin/faqs", http.StatusFound)
+}
+
 func getAdminFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	faqs, err := getAllFAQs(db)
 	if err != nil {
@@ -597,6 +601,7 @@ func main() {
 	router.POST("/api/faqs", postFAQs)
 	router.DELETE("/api/faqs", deleteFAQs)
 
+	router.GET("/admin", getAdmin)
 	router.GET("/admin/faqs", getAdminFAQs)
 	router.GET("/admin/locales", getAdminLocales)
 	router.GET("/admin/faqs/edit/:id", getAdminFAQsEdit)
