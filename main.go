@@ -20,6 +20,9 @@ import (
 
 	"golang.org/x/text/language"
 	"golang.org/x/text/language/display"
+
+	jose "gopkg.in/square/go-jose.v2"
+	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 var db *sql.DB
@@ -408,6 +411,56 @@ func mustExecuteTemplate(tmpl *template.Template, wr io.Writer, data interface{}
 	}
 }
 
+func createJWT() string {
+	key := []byte("secret")
+	sig, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.HS256, Key: key}, (&jose.SignerOptions{}).WithType("JWT"))
+	if err != nil {
+		panic(err)
+	}
+
+	cl := jwt.Claims{
+		Subject: "admin",
+		// Issuer:    "issuer",
+		// NotBefore: jwt.NewNumericDate(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)),
+		// Expiry: jwt.NewNumericDate(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)),
+		// Audience:  jwt.Audience{"leela", "fry"},
+	}
+	raw, err := jwt.Signed(sig).Claims(cl).CompactSerialize()
+	if err != nil {
+		panic(err)
+	}
+
+	return raw
+}
+
+func validateJWT(rawToken string) bool {
+	// raw := `eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJzdWIiOiJzdWJqZWN0In0.gpHyA1B1H6X4a4Edm9wo7D3X2v3aLSDBDG2_5BzXYe0`
+	tok, err := jwt.ParseSigned(rawToken)
+	if err != nil {
+		// panic(err)
+		return false
+	}
+
+	key := []byte("secretxx")
+
+	cl := jwt.Claims{}
+	if err := tok.Claims(key, &cl); err != nil {
+		// panic(err)
+		return false
+	}
+
+	err = cl.Validate(jwt.Expected{
+		// Issuer:  "issuer",
+		// Subject: "subject",
+	})
+	if err != nil {
+		// panic(err)
+		return false
+	}
+
+	return true
+}
+
 func getAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	http.Redirect(w, r, "/admin/faqs", http.StatusFound)
 }
@@ -611,6 +664,16 @@ func main() {
 	router.POST("/admin/faqs/delete", postAdminFAQsDelete)
 
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
+
+	fmt.Println("JWT:")
+	jwt := createJWT()
+	fmt.Println(jwt)
+	isValid := validateJWT(jwt)
+	if isValid {
+		fmt.Printf("valid!")
+	} else {
+		fmt.Printf("NOT valid!!")
+	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
