@@ -396,12 +396,14 @@ var tmplAdminFAQs *template.Template
 var tmplAdminFAQsNew *template.Template
 var tmplAdminFAQEdit *template.Template
 var tmplAdminLocales *template.Template
+var tmplAdminLogin *template.Template
 
 func init() {
 	tmplAdminFAQs = template.Must(template.ParseFiles("admin/templates/faqs.html"))
 	tmplAdminFAQsNew = template.Must(template.ParseFiles("admin/templates/faqs_new.html"))
 	tmplAdminFAQEdit = template.Must(template.ParseFiles("admin/templates/faqs_edit.html"))
 	tmplAdminLocales = template.Must(template.ParseFiles("admin/templates/locales.html"))
+	tmplAdminLogin = template.Must(template.ParseFiles("admin/templates/login.html"))
 }
 
 func mustExecuteTemplate(tmpl *template.Template, wr io.Writer, data interface{}) {
@@ -475,6 +477,14 @@ func getAdminFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		FAQs:      faqs,
 	}
 	mustExecuteTemplate(tmplAdminFAQs, w, data)
+}
+
+func getAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	data := FAQsPageData{
+		PageTitle: "Admin / Login",
+		// FAQs:      faqs,
+	}
+	mustExecuteTemplate(tmplAdminLogin, w, data)
 }
 
 func getAdminFAQsNew(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -662,6 +672,7 @@ func main() {
 	router.POST("/admin/faqs/update", postAdminFAQsUpdate)
 	router.POST("/admin/faqs/create", postAdminFAQsCreate)
 	router.POST("/admin/faqs/delete", postAdminFAQsDelete)
+	router.GET("/admin/login", getAdminLogin)
 
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
 
