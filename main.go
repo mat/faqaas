@@ -413,8 +413,8 @@ func mustExecuteTemplate(tmpl *template.Template, wr io.Writer, data interface{}
 	}
 }
 
-func createJWT() string {
-	key := []byte("secret")
+func createJWT(expiry time.Time) string {
+	key := []byte(jwtSecret)
 	sig, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.HS256, Key: key}, (&jose.SignerOptions{}).WithType("JWT"))
 	if err != nil {
 		panic(err)
@@ -424,7 +424,7 @@ func createJWT() string {
 		Subject: "admin",
 		// Issuer:    "issuer",
 		// NotBefore: jwt.NewNumericDate(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)),
-		// Expiry: jwt.NewNumericDate(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)),
+		Expiry: jwt.NewNumericDate(expiry),
 		// Audience:  jwt.Audience{"leela", "fry"},
 	}
 	raw, err := jwt.Signed(sig).Claims(cl).CompactSerialize()
@@ -435,28 +435,26 @@ func createJWT() string {
 	return raw
 }
 
+const jwtSecret string = "secret"
+
 func validateJWT(rawToken string) bool {
-	// raw := `eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJzdWIiOiJzdWJqZWN0In0.gpHyA1B1H6X4a4Edm9wo7D3X2v3aLSDBDG2_5BzXYe0`
 	tok, err := jwt.ParseSigned(rawToken)
 	if err != nil {
-		// panic(err)
 		return false
 	}
 
-	key := []byte("secretxx")
+	key := []byte(jwtSecret)
 
 	cl := jwt.Claims{}
 	if err := tok.Claims(key, &cl); err != nil {
-		// panic(err)
 		return false
 	}
 
 	err = cl.Validate(jwt.Expected{
 		// Issuer:  "issuer",
-		// Subject: "subject",
+		Subject: "admin",
 	})
 	if err != nil {
-		// panic(err)
 		return false
 	}
 
@@ -467,7 +465,37 @@ func getAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	http.Redirect(w, r, "/admin/faqs", http.StatusFound)
 }
 
+func loggedInAsAdmin(r *http.Request) bool {
+	authCookie, err := r.Cookie("Auth")
+	if err != nil {
+		return false
+	}
+	fmt.Println("AUTH cookie:")
+	val := authCookie.Value
+	fmt.Println(val)
+
+	isValid := validateJWT(val)
+	if isValid {
+		fmt.Printf("valid!")
+		return true
+	} else {
+		fmt.Printf("NOT valid!!")
+		return false
+	}
+}
+
+func redirectToAdminLogin(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/admin/login", http.StatusFound)
+}
+
 func getAdminFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	//// TODO refactor
+	if !loggedInAsAdmin(r) {
+		redirectToAdminLogin(w, r)
+		return
+	}
+	//// TODO refactor
+
 	faqs, err := getAllFAQs(db)
 	if err != nil {
 		panic(err)
@@ -488,6 +516,12 @@ func getAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 }
 
 func getAdminFAQsNew(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	//// TODO refactor
+	if !loggedInAsAdmin(r) {
+		redirectToAdminLogin(w, r)
+		return
+	}
+	//// TODO refactor
 	data := FAQsNewPageData{
 		PageTitle:     "Admin / New FAQ",
 		DefaultLocale: getDefaultLocale(),
@@ -624,11 +658,48 @@ func postAdminFAQsCreate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 }
 
 func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	//// TODO refactor
+	if !loggedInAsAdmin(r) {
+		redirectToAdminLogin(w, r)
+		return
+	}
+	//// TODO refactor
 	data := LocalesPageData{
 		PageTitle: "Admin / Locales",
 		Locales:   supportedLocales,
 	}
 	mustExecuteTemplate(tmplAdminLocales, w, data)
+}
+
+func postAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+
+	fmt.Println("email:", email)
+	fmt.Println("password:", password)
+
+	if email == "admin" && password == "secret" {
+		fmt.Println("Logged in as admin!")
+		setAuthCookie(w)
+		http.Redirect(w, r, "/admin/faqs", http.StatusFound)
+	} else {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	}
+}
+
+func setAuthCookie(w http.ResponseWriter) {
+	oneHour, _ := time.ParseDuration("1h")
+	expires := time.Now().Add(oneHour)
+
+	ck := http.Cookie{
+		Name:  "Auth",
+		Value: createJWT(expires),
+		// Domain:  "foo.com",
+		// Path:    "/",
+		Expires: expires,
+	}
+
+	http.SetCookie(w, &ck)
 }
 
 func main() {
@@ -673,11 +744,15 @@ func main() {
 	router.POST("/admin/faqs/create", postAdminFAQsCreate)
 	router.POST("/admin/faqs/delete", postAdminFAQsDelete)
 	router.GET("/admin/login", getAdminLogin)
+	router.POST("/admin/login", postAdminLogin)
 
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
 
+	oneHour, _ := time.ParseDuration("1h")
+	expiry := time.Now().Add(oneHour)
+
 	fmt.Println("JWT:")
-	jwt := createJWT()
+	jwt := createJWT(expiry)
 	fmt.Println(jwt)
 	isValid := validateJWT(jwt)
 	if isValid {
