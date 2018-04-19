@@ -489,13 +489,6 @@ func redirectToAdminLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAdminFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	//// TODO refactor
-	if !loggedInAsAdmin(r) {
-		redirectToAdminLogin(w, r)
-		return
-	}
-	//// TODO refactor
-
 	faqs, err := getAllFAQs(db)
 	if err != nil {
 		panic(err)
@@ -516,12 +509,6 @@ func getAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 }
 
 func getAdminFAQsNew(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	//// TODO refactor
-	if !loggedInAsAdmin(r) {
-		redirectToAdminLogin(w, r)
-		return
-	}
-	//// TODO refactor
 	data := FAQsNewPageData{
 		PageTitle:     "Admin / New FAQ",
 		DefaultLocale: getDefaultLocale(),
@@ -658,12 +645,6 @@ func postAdminFAQsCreate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 }
 
 func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	//// TODO refactor
-	if !loggedInAsAdmin(r) {
-		redirectToAdminLogin(w, r)
-		return
-	}
-	//// TODO refactor
 	data := LocalesPageData{
 		PageTitle: "Admin / Locales",
 		Locales:   supportedLocales,
@@ -735,14 +716,14 @@ func main() {
 	router.POST("/api/faqs", postFAQs)
 	router.DELETE("/api/faqs", deleteFAQs)
 
-	router.GET("/admin", getAdmin)
-	router.GET("/admin/faqs", getAdminFAQs)
-	router.GET("/admin/locales", getAdminLocales)
-	router.GET("/admin/faqs/edit/:id", getAdminFAQsEdit)
-	router.GET("/admin/faqs/new", getAdminFAQsNew)
-	router.POST("/admin/faqs/update", postAdminFAQsUpdate)
-	router.POST("/admin/faqs/create", postAdminFAQsCreate)
-	router.POST("/admin/faqs/delete", postAdminFAQsDelete)
+	router.GET("/admin", adminPassword(getAdmin))
+	router.GET("/admin/faqs", adminPassword(getAdminFAQs))
+	router.GET("/admin/locales", adminPassword(getAdminLocales))
+	router.GET("/admin/faqs/edit/:id", adminPassword(getAdminFAQsEdit))
+	router.GET("/admin/faqs/new", adminPassword(getAdminFAQsNew))
+	router.POST("/admin/faqs/update", adminPassword(postAdminFAQsUpdate))
+	router.POST("/admin/faqs/create", adminPassword(postAdminFAQsCreate))
+	router.POST("/admin/faqs/delete", adminPassword(postAdminFAQsDelete))
 	router.GET("/admin/login", getAdminLogin)
 	router.POST("/admin/login", postAdminLogin)
 
@@ -769,6 +750,17 @@ func main() {
 
 	loggedRouter := handlers.CombinedLoggingHandler(os.Stdout, router)
 	log.Fatal(http.ListenAndServe(addr, loggedRouter))
+}
+
+func adminPassword(h httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		if !loggedInAsAdmin(r) {
+			redirectToAdminLogin(w, r)
+			return
+		} else {
+			h(w, r, ps)
+		}
+	}
 }
 
 var languageMatcher language.Matcher
