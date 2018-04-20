@@ -414,7 +414,7 @@ func mustExecuteTemplate(tmpl *template.Template, wr io.Writer, data interface{}
 }
 
 func createJWT(expiry time.Time) string {
-	key := []byte(jwtSecret)
+	key := []byte(jwtKey)
 	sig, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.HS256, Key: key}, (&jose.SignerOptions{}).WithType("JWT"))
 	if err != nil {
 		panic(err)
@@ -435,7 +435,14 @@ func createJWT(expiry time.Time) string {
 	return raw
 }
 
-const jwtSecret string = "secret"
+var jwtKey string
+
+func init() {
+	jwtKey = os.Getenv("JWT_KEY")
+	if len(jwtKey) == 0 {
+		panic("JWT_KEY not set")
+	}
+}
 
 func validateJWT(rawToken string) bool {
 	tok, err := jwt.ParseSigned(rawToken)
@@ -443,7 +450,7 @@ func validateJWT(rawToken string) bool {
 		return false
 	}
 
-	key := []byte(jwtSecret)
+	key := []byte(jwtKey)
 
 	cl := jwt.Claims{}
 	if err := tok.Claims(key, &cl); err != nil {
