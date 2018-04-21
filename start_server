@@ -4,6 +4,6 @@ set -euxo pipefail
 export DATABASE_URL=postgres://mat:@localhost/faqaas?sslmode=disable
 export PORT=8080
 export SUPPORTED_LOCALES=en,de,fr,es,it,nl,pt,pt-BR,da,sv,no,ru,ar,zh
-export JWT_KEY=secret
+export JWT_KEY=secret # openssl rand -hex 32
 
 go run main.go
