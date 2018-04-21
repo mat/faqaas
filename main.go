@@ -18,6 +18,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	_ "github.com/lib/pq"
 
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/text/language"
 	"golang.org/x/text/language/display"
 
@@ -436,11 +437,17 @@ func createJWT(expiry time.Time) string {
 }
 
 var jwtKey string
+var adminPasswordHash string
 
 func init() {
 	jwtKey = os.Getenv("JWT_KEY")
 	if len(jwtKey) == 0 {
 		panic("JWT_KEY not set")
+	}
+
+	adminPasswordHash = os.Getenv("ADMIN_PASSWORD")
+	if len(adminPasswordHash) == 0 {
+		panic("ADMIN_PASSWORD not set")
 	}
 }
 
@@ -663,16 +670,23 @@ func postAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
-	fmt.Println("email:", email)
-	fmt.Println("password:", password)
-
-	if email == "admin" && password == "secret" {
+	if email == "admin" && isAdminPassword(password) {
 		fmt.Println("Logged in as admin!")
 		setAuthCookie(w)
 		http.Redirect(w, r, "/admin/faqs", http.StatusFound)
 	} else {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 	}
+}
+
+func isAdminPassword(password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(adminPasswordHash), []byte(password))
+	return err == nil
+}
+
+func hashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	return string(bytes), err
 }
 
 func setAuthCookie(w http.ResponseWriter) {
@@ -738,6 +752,9 @@ func main() {
 
 	oneHour, _ := time.ParseDuration("1h")
 	expiry := time.Now().Add(oneHour)
+
+	hash, _ := hashPassword("secret")
+	fmt.Println("ADMIN_PASSWORD hash:", hash)
 
 	fmt.Println("JWT:")
 	jwt := createJWT(expiry)
