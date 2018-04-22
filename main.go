@@ -695,9 +695,12 @@ func hashPassword(password string) (string, error) {
 	return string(bytes), err
 }
 
+const (
+	adminSessionDuration = 1.0 * time.Hour
+)
+
 func setAuthCookie(w http.ResponseWriter) {
-	oneHour, _ := time.ParseDuration("1h")
-	expires := time.Now().Add(oneHour)
+	expires := time.Now().Add(adminSessionDuration)
 
 	ck := http.Cookie{
 		Name:  "Auth",
