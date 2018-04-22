@@ -750,22 +750,6 @@ func main() {
 
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
 
-	oneHour, _ := time.ParseDuration("1h")
-	expiry := time.Now().Add(oneHour)
-
-	hash, _ := hashPassword("secret")
-	fmt.Println("ADMIN_PASSWORD hash:", hash)
-
-	fmt.Println("JWT:")
-	jwt := createJWT(expiry)
-	fmt.Println(jwt)
-	isValid := validateJWT(jwt)
-	if isValid {
-		fmt.Printf("valid!")
-	} else {
-		fmt.Printf("NOT valid!!")
-	}
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
