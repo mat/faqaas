@@ -451,6 +451,11 @@ func init() {
 	}
 }
 
+const (
+	// leeway for matching NotBefore/Expiry claims.
+	leeway = 1.0 * time.Minute
+)
+
 func validateJWT(rawToken string) bool {
 	tok, err := jwt.ParseSigned(rawToken)
 	if err != nil {
@@ -464,10 +469,11 @@ func validateJWT(rawToken string) bool {
 		return false
 	}
 
-	err = cl.Validate(jwt.Expected{
-		// Issuer:  "issuer",
+	err = cl.ValidateWithLeeway(jwt.Expected{
 		Subject: "admin",
-	})
+		Time:    time.Now(),
+		// Issuer:  "issuer",
+	}, leeway)
 	if err != nil {
 		return false
 	}
