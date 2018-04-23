@@ -786,6 +786,8 @@ func httpsOnly(h httprouter.Handle) httprouter.Handle {
 		if r.Header.Get("X-Forwarded-Proto") == "http" {
 			targetURL := url.URL{Scheme: "https", Host: r.Host, Path: r.URL.Path, RawQuery: r.URL.RawQuery}
 			http.Redirect(w, r, targetURL.String(), http.StatusFound)
+		} else {
+			h(w, r, ps)
 		}
 	}
 }
