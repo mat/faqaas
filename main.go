@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -742,16 +743,16 @@ func main() {
 	router.POST("/api/faqs", postFAQs)
 	router.DELETE("/api/faqs", deleteFAQs)
 
-	router.GET("/admin", adminPassword(getAdmin))
-	router.GET("/admin/faqs", adminPassword(getAdminFAQs))
-	router.GET("/admin/locales", adminPassword(getAdminLocales))
-	router.GET("/admin/faqs/edit/:id", adminPassword(getAdminFAQsEdit))
-	router.GET("/admin/faqs/new", adminPassword(getAdminFAQsNew))
-	router.POST("/admin/faqs/update", adminPassword(postAdminFAQsUpdate))
-	router.POST("/admin/faqs/create", adminPassword(postAdminFAQsCreate))
-	router.POST("/admin/faqs/delete", adminPassword(postAdminFAQsDelete))
-	router.GET("/admin/login", getAdminLogin)
-	router.POST("/admin/login", postAdminLogin)
+	router.GET("/admin", httpsOnly(adminPassword(getAdmin)))
+	router.GET("/admin/faqs", httpsOnly(adminPassword(getAdminFAQs)))
+	router.GET("/admin/locales", httpsOnly(adminPassword(getAdminLocales)))
+	router.GET("/admin/faqs/edit/:id", httpsOnly(adminPassword(getAdminFAQsEdit)))
+	router.GET("/admin/faqs/new", httpsOnly(adminPassword(getAdminFAQsNew)))
+	router.POST("/admin/faqs/update", httpsOnly(adminPassword(postAdminFAQsUpdate)))
+	router.POST("/admin/faqs/create", httpsOnly(adminPassword(postAdminFAQsCreate)))
+	router.POST("/admin/faqs/delete", httpsOnly(adminPassword(postAdminFAQsDelete)))
+	router.GET("/admin/login", httpsOnly(getAdminLogin))
+	router.POST("/admin/login", httpsOnly(postAdminLogin))
 
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
 
@@ -772,6 +773,19 @@ func adminPassword(h httprouter.Handle) httprouter.Handle {
 			return
 		} else {
 			h(w, r, ps)
+		}
+	}
+}
+
+func httpsOnly(h httprouter.Handle) httprouter.Handle {
+	if os.Getenv("HTTP_ALLOWED") == "true" {
+		return h
+	}
+
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		if r.URL.Scheme != "https" {
+			targetURL := url.URL{Scheme: "https", Host: r.Host, Path: r.URL.Path, RawQuery: r.URL.RawQuery}
+			http.Redirect(w, r, targetURL.String(), http.StatusFound)
 		}
 	}
 }
