@@ -97,10 +97,6 @@ func getSingleFAQHTML(w http.ResponseWriter, r *http.Request, p httprouter.Param
 	fmt.Fprint(w, "id=", id, "\n")
 }
 
-func IndexNoLocale(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	fmt.Fprint(w, "Welcome!\n")
-}
-
 func postFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	decoder := json.NewDecoder(r.Body)
 	var faq FAQ
