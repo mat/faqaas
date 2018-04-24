@@ -107,20 +107,6 @@ func postFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 	defer r.Body.Close()
-
-	// err = saveFAQ(db, &faq)
-	// if err != nil {
-	// 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	// 	// Write JSON result
-	// 	w.Header().Set("Content-Type", "application/json")
-	// 	enc := json.NewEncoder(w)
-	// 	enc.Encode(Error{Error: err.Error()})
-	// } else {
-	// 	// Write JSON result
-	// 	w.Header().Set("Content-Type", "application/json")
-	// 	enc := json.NewEncoder(w)
-	// 	enc.Encode(faq)
-	// }
 }
 
 func deleteFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
