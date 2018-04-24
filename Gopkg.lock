@@ -26,6 +26,8 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
+    "bcrypt",
+    "blowfish",
     "ed25519",
     "ed25519/internal/edwards25519"
   ]
@@ -58,6 +60,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b6040c1f03adfb794f18be279a31949fca73e52a80d9debcbfd791ad1255003f"
+  inputs-digest = "a5e8d3dc88283e56342f35a1929782ed24c4e7e2696498a8c00a13daaeb47826"
   solver-name = "gps-cdcl"
   solver-version = 1
