@@ -585,10 +585,8 @@ func postAdminFAQsUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		enc := json.NewEncoder(w)
 		enc.Encode(Error{Error: err.Error()})
 	} else {
-		// Write JSON result
-		w.Header().Set("Content-Type", "application/json")
-		enc := json.NewEncoder(w)
-		enc.Encode(text)
+		redirectURL := fmt.Sprintf("/admin/faqs/edit/%d", faqID)
+		http.Redirect(w, r, redirectURL, http.StatusFound)
 	}
 }
 
