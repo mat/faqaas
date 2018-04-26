@@ -690,6 +690,7 @@ func setAuthCookie(w http.ResponseWriter) {
 		// Domain:  "foo.com",
 		Path:    "/admin",
 		Expires: expires,
+		Secure:  !httpAllowed(),
 	}
 
 	http.SetCookie(w, &ck)
@@ -762,8 +763,12 @@ func adminPassword(h httprouter.Handle) httprouter.Handle {
 	}
 }
 
+func httpAllowed() bool {
+	return os.Getenv("HTTP_ALLOWED") == "true"
+}
+
 func httpsOnly(h httprouter.Handle) httprouter.Handle {
-	if os.Getenv("HTTP_ALLOWED") == "true" {
+	if httpAllowed() {
 		return h
 	}
 
