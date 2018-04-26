@@ -469,7 +469,7 @@ func getAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func loggedInAsAdmin(r *http.Request) bool {
-	authCookie, err := r.Cookie("Auth")
+	authCookie, err := r.Cookie(authCookieName)
 	if err != nil {
 		return false
 	}
@@ -677,6 +677,7 @@ func hashPassword(password string) (string, error) {
 }
 
 const (
+	authCookieName       = "Authorization"
 	adminSessionDuration = 1.0 * time.Hour
 )
 
@@ -684,7 +685,7 @@ func setAuthCookie(w http.ResponseWriter) {
 	expires := time.Now().Add(adminSessionDuration)
 
 	ck := http.Cookie{
-		Name:  "Auth",
+		Name:  authCookieName,
 		Value: createJWT(expires),
 		// Domain:  "foo.com",
 		// Path:    "/",
