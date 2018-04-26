@@ -688,7 +688,7 @@ func setAuthCookie(w http.ResponseWriter) {
 		Name:  authCookieName,
 		Value: createJWT(expires),
 		// Domain:  "foo.com",
-		// Path:    "/",
+		Path:    "/admin",
 		Expires: expires,
 	}
 
