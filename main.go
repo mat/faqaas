@@ -328,6 +328,29 @@ func getFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	enc.Encode(faqs)
 }
 
+func getSingleFAQ(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	idStr := ps.ByName("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		panic(err)
+	}
+
+	faq, err := getFAQ(db, id)
+	if err != nil {
+		panic(err)
+	}
+
+	if len(faq.Texts) == 0 {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	// Write JSON result
+	w.Header().Set("Content-Type", "application/json")
+	enc := json.NewEncoder(w)
+	enc.Encode(faq)
+}
+
 func postCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	category, err := createCategory(db)
 	if err != nil {
@@ -727,6 +750,7 @@ func main() {
 	router.POST("/api/categories", postCategories)
 
 	router.GET("/api/faqs", getFAQs)
+	router.GET("/api/faqs/:id", getSingleFAQ)
 	router.POST("/api/faqs", postFAQs)
 	router.DELETE("/api/faqs", deleteFAQs)
 
