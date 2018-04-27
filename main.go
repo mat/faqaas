@@ -662,7 +662,7 @@ func postAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		setAuthCookie(w)
 		http.Redirect(w, r, "/admin/faqs", http.StatusFound)
 	} else {
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		http.Redirect(w, r, "/admin/login", http.StatusFound)
 	}
 }
 
