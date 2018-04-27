@@ -98,37 +98,6 @@ func getSingleFAQHTML(w http.ResponseWriter, r *http.Request, p httprouter.Param
 	fmt.Fprint(w, "id=", id, "\n")
 }
 
-func postFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	decoder := json.NewDecoder(r.Body)
-	var faq FAQ
-	err := decoder.Decode(&faq)
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-}
-
-func deleteFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	decoder := json.NewDecoder(r.Body)
-	var faq FAQ
-	err := decoder.Decode(&faq)
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	err = deleteFAQ(db, faq.ID)
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-
-		w.Header().Set("Content-Type", "application/json")
-		enc := json.NewEncoder(w)
-		enc.Encode(Error{Error: err.Error()})
-	}
-}
-
 func getLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	locales := supportedLocales
 
@@ -349,19 +318,6 @@ func getSingleFAQ(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 	enc.Encode(faq)
-}
-
-func postCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	category, err := createCategory(db)
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	// Write JSON result
-	w.Header().Set("Content-Type", "application/json")
-	enc := json.NewEncoder(w)
-	enc.Encode(category)
 }
 
 func createCategory(db *sql.DB) (*Category, error) {
@@ -745,14 +701,9 @@ func main() {
 	router.GET("/faq/:locale/:id", getSingleFAQHTML)
 
 	router.GET("/api/locales", getLocales)
-
 	router.GET("/api/categories", getCategories)
-	router.POST("/api/categories", postCategories)
-
 	router.GET("/api/faqs", getFAQs)
 	router.GET("/api/faqs/:id", getSingleFAQ)
-	router.POST("/api/faqs", postFAQs)
-	router.DELETE("/api/faqs", deleteFAQs)
 
 	router.GET("/admin", httpsOnly(adminPassword(getAdmin)))
 	router.GET("/admin/faqs", httpsOnly(adminPassword(getAdminFAQs)))
