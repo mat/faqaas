@@ -452,18 +452,9 @@ func loggedInAsAdmin(r *http.Request) bool {
 	if err != nil {
 		return false
 	}
-	fmt.Println("AUTH cookie:")
-	val := authCookie.Value
-	fmt.Println(val)
 
-	isValid := validateJWT(val)
-	if isValid {
-		fmt.Printf("valid!")
-		return true
-	} else {
-		fmt.Printf("NOT valid!!")
-		return false
-	}
+	isValid := validateJWT(authCookie.Value)
+	return isValid
 }
 
 func redirectToAdminLogin(w http.ResponseWriter, r *http.Request) {
