@@ -30,9 +30,9 @@ import (
 var db *sql.DB
 
 type Locale struct {
-	Code           string `json:"code"`
-	Name           string `json:"name"`        // Name in English
-	NameInLanguage string `json:"locale_name"` // Name in local language
+	Code        string `json:"code"`
+	NameEnglish string `json:"name_en,omitempty"`    // Name in English
+	NameLocal   string `json:"name_local,omitempty"` // Name in local language
 }
 
 func (l *Locale) IsDefaultLocale() bool {
@@ -796,7 +796,7 @@ func init() {
 		if err != nil {
 			panic(nil)
 		}
-		locale := Locale{Code: code, Name: en.Name(tag), NameInLanguage: display.Self.Name(tag)}
+		locale := Locale{Code: code, NameEnglish: en.Name(tag), NameLocal: display.Self.Name(tag)}
 		supportedLocales = append(supportedLocales, locale)
 	}
 	if len(supportedLocales) == 0 {
