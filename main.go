@@ -691,10 +691,10 @@ func main() {
 	router.GET("/faqs/:locale", getFAQsHTML)
 	router.GET("/faq/:locale/:id", getSingleFAQHTML)
 
-	router.GET("/api/locales", getLocales)
-	router.GET("/api/categories", getCategories)
-	router.GET("/api/faqs", getFAQs)
-	router.GET("/api/faqs/:id", getSingleFAQ)
+	router.GET("/api/locales", httpsOnly(getLocales))
+	router.GET("/api/categories", httpsOnly(getCategories))
+	router.GET("/api/faqs", httpsOnly(getFAQs))
+	router.GET("/api/faqs/:id", httpsOnly(getSingleFAQ))
 
 	router.GET("/admin", httpsOnly(adminPassword(getAdmin)))
 	router.GET("/admin/faqs", httpsOnly(adminPassword(getAdminFAQs)))
