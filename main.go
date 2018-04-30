@@ -400,6 +400,7 @@ func createJWT(expiry time.Time) string {
 
 var jwtKey string
 var adminPasswordHash string
+var apiKey string
 
 func init() {
 	jwtKey = os.Getenv("JWT_KEY")
@@ -410,6 +411,11 @@ func init() {
 	adminPasswordHash = os.Getenv("ADMIN_PASSWORD")
 	if len(adminPasswordHash) == 0 {
 		panic("ADMIN_PASSWORD not set")
+	}
+
+	apiKey = os.Getenv("API_KEY")
+	if len(apiKey) == 0 {
+		panic("API_KEY not set")
 	}
 }
 
@@ -691,10 +697,10 @@ func main() {
 	router.GET("/faqs/:locale", getFAQsHTML)
 	router.GET("/faq/:locale/:id", getSingleFAQHTML)
 
-	router.GET("/api/locales", httpsOnly(getLocales))
-	router.GET("/api/categories", httpsOnly(getCategories))
-	router.GET("/api/faqs", httpsOnly(getFAQs))
-	router.GET("/api/faqs/:id", httpsOnly(getSingleFAQ))
+	router.GET("/api/locales", httpsOnly(requireAPIAuth(getLocales)))
+	router.GET("/api/categories", httpsOnly(requireAPIAuth(getCategories)))
+	router.GET("/api/faqs", httpsOnly(requireAPIAuth(getFAQs)))
+	router.GET("/api/faqs/:id", httpsOnly(requireAPIAuth(getSingleFAQ)))
 
 	router.GET("/admin", httpsOnly(adminPassword(getAdmin)))
 	router.GET("/admin/faqs", httpsOnly(adminPassword(getAdminFAQs)))
@@ -723,6 +729,20 @@ func adminPassword(h httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		if !loggedInAsAdmin(r) {
 			redirectToAdminLogin(w, r)
+			return
+		} else {
+			h(w, r, ps)
+		}
+	}
+}
+
+const apiKeyHeader = "Authorization"
+
+func requireAPIAuth(h httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		authHeaderOK := r.Header.Get(apiKeyHeader) == apiKey
+		if !authHeaderOK {
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		} else {
 			h(w, r, ps)
