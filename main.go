@@ -660,10 +660,10 @@ const (
 func setAuthCookie(w http.ResponseWriter) {
 	expires := time.Now().Add(adminSessionDuration)
 
+	// https://infosec.mozilla.org/guidelines/web_security#cookies
 	ck := http.Cookie{
-		Name:  authCookieName,
-		Value: createJWT(expires),
-		// Domain:  "foo.com",
+		Name:     authCookieName,
+		Value:    createJWT(expires),
 		Path:     "/admin",
 		Expires:  expires,
 		Secure:   !httpAllowed(),
