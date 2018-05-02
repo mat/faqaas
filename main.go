@@ -271,6 +271,45 @@ func getFAQ(db *sql.DB, id int) (*FAQ, error) {
 	return &faq, nil
 }
 
+func searchFAQs(db *sql.DB, query string) ([]FAQ, error) {
+	rows, err := db.Query(`SELECT DISTINCT * FROM (
+		SELECT faq_texts.faq_id
+		FROM search_index
+		JOIN faq_texts ON search_index.id = faq_texts.id
+		WHERE document @@ plainto_tsquery('simple', $1)
+		ORDER BY ts_rank(document, plainto_tsquery('simple', $1)) DESC
+	) faqids;`, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	faqs := []FAQ{}
+	for rows.Next() {
+		var id int
+		err = rows.Scan(&id)
+		if err != nil {
+			return nil, err
+		}
+
+		faq := FAQ{ID: id}
+		texts, err := getTextForFAQ(db, id)
+		if err != nil {
+			panic(err)
+		}
+
+		faq.Texts = texts
+		faqs = append(faqs, faq)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return faqs, nil
+}
+
 func getCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	categories, err := getAllCategories(db)
 	if err != nil {
@@ -318,6 +357,24 @@ func getSingleFAQ(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 	enc.Encode(faq)
+}
+
+func getSearchFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	query := strings.TrimSpace(r.FormValue("query"))
+	if len(query) == 0 {
+		http.Error(w, "query param empty", http.StatusBadRequest)
+		return
+	}
+
+	faqs, err := searchFAQs(db, query)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	enc := json.NewEncoder(w)
+	enc.Encode(faqs)
 }
 
 func createCategory(db *sql.DB) (*Category, error) {
@@ -554,6 +611,7 @@ func postAdminFAQsUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	}
 
 	err = saveFAQText(db, faqID, &text)
+	updateSearchIndex(db)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		// Write JSON result
@@ -577,6 +635,7 @@ func postAdminFAQsDelete(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	}
 
 	err = deleteFAQ(db, faqID)
+	updateSearchIndex(db)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		// Write JSON result
@@ -599,6 +658,7 @@ func postAdminFAQsCreate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	text := FAQText{Question: form.question, Answer: form.answer, Locale: loc}
 
 	faq, err := createFAQ(db)
+	updateSearchIndex(db)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		// Write JSON result
@@ -609,6 +669,7 @@ func postAdminFAQsCreate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	}
 
 	err = saveFAQText(db, faq.ID, &text)
+	updateSearchIndex(db)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		// Write JSON result
@@ -619,6 +680,15 @@ func postAdminFAQsCreate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		redirectURL := fmt.Sprintf("/admin/faqs/edit/%d", faq.ID)
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 	}
+}
+
+func updateSearchIndex(db *sql.DB) error {
+	sqlStatement := `REFRESH MATERIALIZED VIEW search_index;`
+	_, err := db.Exec(sqlStatement)
+	if err != nil {
+		fmt.Print("DB ERR:", err)
+	}
+	return err
 }
 
 func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -701,6 +771,7 @@ func main() {
 	router.GET("/api/categories", httpsOnly(requireAPIAuth(getCategories)))
 	router.GET("/api/faqs", httpsOnly(requireAPIAuth(getFAQs)))
 	router.GET("/api/faqs/:id", httpsOnly(requireAPIAuth(getSingleFAQ)))
+	router.GET("/api/search-faqs", httpsOnly(requireAPIAuth(getSearchFAQs)))
 
 	router.GET("/admin", httpsOnly(adminPassword(getAdmin)))
 	router.GET("/admin/faqs", httpsOnly(adminPassword(getAdminFAQs)))
