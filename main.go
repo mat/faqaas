@@ -271,14 +271,14 @@ func getFAQ(db *sql.DB, id int) (*FAQ, error) {
 	return &faq, nil
 }
 
-func searchFAQs(db *sql.DB, query string) ([]FAQ, error) {
-	rows, err := db.Query(`SELECT DISTINCT * FROM (
+func searchFAQs(db *sql.DB, lang string, query string) ([]FAQ, error) {
+	rows, err := db.Query(`
 		SELECT faq_texts.faq_id
 		FROM search_index
 		JOIN faq_texts ON search_index.id = faq_texts.id
 		WHERE document @@ plainto_tsquery('simple', $1)
-		ORDER BY ts_rank(document, plainto_tsquery('simple', $1)) DESC
-	) faqids;`, query)
+		AND faq_texts.locale = $2
+		ORDER BY ts_rank(document, plainto_tsquery('simple', $1)) DESC;`, query, lang)
 	if err != nil {
 		return nil, err
 	}
@@ -365,8 +365,16 @@ func getSearchFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		http.Error(w, "query param empty", http.StatusBadRequest)
 		return
 	}
+	lang := strings.TrimSpace(r.FormValue("lang"))
+	if len(lang) == 0 {
+		http.Error(w, "lang param empty", http.StatusBadRequest)
+		return
+	}
+	accept := r.Header.Get("Accept-Language")
+	langTag, _ := language.MatchStrings(languageMatcher, lang, accept)
+	fmt.Printf("lang %s matched %s\n", lang, langTag)
 
-	faqs, err := searchFAQs(db, query)
+	faqs, err := searchFAQs(db, langTag.String(), query)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
