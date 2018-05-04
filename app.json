@@ -1,0 +1,30 @@
+{
+  "name": "faqaas",
+  "scripts": {},
+  "env": {
+    "ADMIN_PASSWORD": {
+      "required": true
+    },
+    "API_KEY": {
+      "generator": "secret"
+    },
+    "JWT_KEY": {
+      "generator": "secret"
+    },
+    "SUPPORTED_LOCALES": "en,de,fr,es,pt,pt-BR,da,sv,no,ru,ar,zh"
+  },
+  "formation": {
+    "web": {
+      "quantity": 1
+    }
+  },
+  "addons": [
+    "papertrail",
+    "heroku-postgresql"
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/go"
+    }
+  ]
+}
