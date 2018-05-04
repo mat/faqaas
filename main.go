@@ -98,12 +98,10 @@ func getSingleFAQHTML(w http.ResponseWriter, r *http.Request, p httprouter.Param
 	fmt.Fprint(w, "id=", id, "\n")
 }
 
-func getLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	locales := supportedLocales
-
+func getLanguages(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
-	enc.Encode(locales)
+	enc.Encode(supportedLocales)
 }
 
 func saveFAQText(db *sql.DB, faqID int, text *FAQText) error {
@@ -775,7 +773,7 @@ func main() {
 	router.GET("/faqs/:locale", getFAQsHTML)
 	router.GET("/faq/:locale/:id", getSingleFAQHTML)
 
-	router.GET("/api/locales", httpsOnly(requireAPIAuth(getLocales)))
+	router.GET("/api/languages", httpsOnly(requireAPIAuth(getLanguages)))
 	router.GET("/api/categories", httpsOnly(requireAPIAuth(getCategories)))
 	router.GET("/api/faqs", httpsOnly(requireAPIAuth(getFAQs)))
 	router.GET("/api/faqs/:id", httpsOnly(requireAPIAuth(getSingleFAQ)))
