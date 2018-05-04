@@ -681,7 +681,14 @@ func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		PageTitle: "Admin / Languages",
 		Locales:   supportedLocales,
 	}
-	mustExecuteTemplate(tmplAdminLocales, w, data)
+
+	var tmpl *template.Template
+	tmpl = template.Must(template.ParseFiles("admin/templates/layout.html", "admin/templates/locales.html"))
+	err := tmpl.ExecuteTemplate(w, "layout", data)
+	if err != nil {
+		panic(err)
+	}
+	// mustExecuteTemplate(tmplAdminLocales, w, data)
 }
 
 func postAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
