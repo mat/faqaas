@@ -99,9 +99,7 @@ func getSingleFAQHTML(w http.ResponseWriter, r *http.Request, p httprouter.Param
 }
 
 func getLanguages(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	w.Header().Set("Content-Type", "application/json")
-	enc := json.NewEncoder(w)
-	enc.Encode(supportedLocales)
+	writeJSON(w, supportedLocales)
 }
 
 func saveFAQText(db *sql.DB, faqID int, text *FAQText) error {
@@ -315,10 +313,13 @@ func getCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	// Write JSON result
+	writeJSON(w, categories)
+}
+
+func writeJSON(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
-	enc.Encode(categories)
+	enc.Encode(data)
 }
 
 func getFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -328,10 +329,7 @@ func getFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	// Write JSON result
-	w.Header().Set("Content-Type", "application/json")
-	enc := json.NewEncoder(w)
-	enc.Encode(faqs)
+	writeJSON(w, faqs)
 }
 
 func getSingleFAQ(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -351,10 +349,7 @@ func getSingleFAQ(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		return
 	}
 
-	// Write JSON result
-	w.Header().Set("Content-Type", "application/json")
-	enc := json.NewEncoder(w)
-	enc.Encode(faq)
+	writeJSON(w, faq)
 }
 
 func getSearchFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -378,9 +373,7 @@ func getSearchFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	enc := json.NewEncoder(w)
-	enc.Encode(faqs)
+	writeJSON(w, faqs)
 }
 
 func createCategory(db *sql.DB) (*Category, error) {
@@ -620,10 +613,7 @@ func postAdminFAQsUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	updateSearchIndex(db)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		// Write JSON result
-		w.Header().Set("Content-Type", "application/json")
-		enc := json.NewEncoder(w)
-		enc.Encode(Error{Error: err.Error()})
+		writeJSON(w, Error{Error: err.Error()})
 	} else {
 		redirectURL := fmt.Sprintf("/admin/faqs/edit/%d", faqID)
 		http.Redirect(w, r, redirectURL, http.StatusFound)
@@ -644,10 +634,7 @@ func postAdminFAQsDelete(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	updateSearchIndex(db)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		// Write JSON result
-		w.Header().Set("Content-Type", "application/json")
-		enc := json.NewEncoder(w)
-		enc.Encode(Error{Error: err.Error()})
+		writeJSON(w, Error{Error: err.Error()})
 	} else {
 		http.Redirect(w, r, "/admin/faqs", http.StatusFound)
 	}
@@ -667,10 +654,7 @@ func postAdminFAQsCreate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	updateSearchIndex(db)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		// Write JSON result
-		w.Header().Set("Content-Type", "application/json")
-		enc := json.NewEncoder(w)
-		enc.Encode(Error{Error: err.Error()})
+		writeJSON(w, Error{Error: err.Error()})
 		return
 	}
 
@@ -678,10 +662,7 @@ func postAdminFAQsCreate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	updateSearchIndex(db)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		// Write JSON result
-		w.Header().Set("Content-Type", "application/json")
-		enc := json.NewEncoder(w)
-		enc.Encode(Error{Error: err.Error()})
+		writeJSON(w, Error{Error: err.Error()})
 	} else {
 		redirectURL := fmt.Sprintf("/admin/faqs/edit/%d", faq.ID)
 		http.Redirect(w, r, redirectURL, http.StatusFound)
