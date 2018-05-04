@@ -699,7 +699,7 @@ func updateSearchIndex(db *sql.DB) error {
 
 func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	data := LocalesPageData{
-		PageTitle: "Admin / Locales",
+		PageTitle: "Admin / Languages",
 		Locales:   supportedLocales,
 	}
 	mustExecuteTemplate(tmplAdminLocales, w, data)
