@@ -306,10 +306,12 @@ func searchFAQs(db *sql.DB, lang string, query string) ([]FAQ, error) {
 	return faqs, nil
 }
 
+const internalError = "internal error"
+
 func getCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	categories, err := getAllCategories(db)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, internalError, http.StatusInternalServerError)
 		return
 	}
 
@@ -325,7 +327,7 @@ func writeJSON(w http.ResponseWriter, data interface{}) {
 func getFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	faqs, err := getAllFAQs(db)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, internalError, http.StatusInternalServerError)
 		return
 	}
 
@@ -345,7 +347,7 @@ func getSingleFAQ(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	}
 
 	if len(faq.Texts) == 0 {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		http.Error(w, "faq not found", http.StatusNotFound)
 		return
 	}
 
@@ -369,7 +371,7 @@ func getSearchFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	faqs, err := searchFAQs(db, langTag.String(), query)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, internalError, http.StatusInternalServerError)
 		return
 	}
 
@@ -612,8 +614,7 @@ func postAdminFAQsUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	err = saveFAQText(db, faqID, &text)
 	updateSearchIndex(db)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		writeJSON(w, Error{Error: err.Error()})
+		http.Error(w, internalError, http.StatusInternalServerError)
 	} else {
 		redirectURL := fmt.Sprintf("/admin/faqs/edit/%d", faqID)
 		http.Redirect(w, r, redirectURL, http.StatusFound)
@@ -633,8 +634,7 @@ func postAdminFAQsDelete(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	err = deleteFAQ(db, faqID)
 	updateSearchIndex(db)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		writeJSON(w, Error{Error: err.Error()})
+		http.Error(w, internalError, http.StatusInternalServerError)
 	} else {
 		http.Redirect(w, r, "/admin/faqs", http.StatusFound)
 	}
@@ -653,16 +653,14 @@ func postAdminFAQsCreate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	faq, err := createFAQ(db)
 	updateSearchIndex(db)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		writeJSON(w, Error{Error: err.Error()})
+		http.Error(w, internalError, http.StatusInternalServerError)
 		return
 	}
 
 	err = saveFAQText(db, faq.ID, &text)
 	updateSearchIndex(db)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		writeJSON(w, Error{Error: err.Error()})
+		http.Error(w, internalError, http.StatusInternalServerError)
 	} else {
 		redirectURL := fmt.Sprintf("/admin/faqs/edit/%d", faq.ID)
 		http.Redirect(w, r, redirectURL, http.StatusFound)
@@ -800,7 +798,7 @@ func requireAPIAuth(h httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		authHeaderOK := r.Header.Get(apiKeyHeader) == apiKey
 		if !authHeaderOK {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		} else {
 			h(w, r, ps)
