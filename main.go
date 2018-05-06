@@ -420,14 +420,21 @@ var tmplAdminLocales *template.Template
 var tmplAdminLogin *template.Template
 
 func init() {
-	tmplAdminFAQs = template.Must(template.ParseFiles("admin/templates/faqs.html"))
-	tmplAdminFAQsNew = template.Must(template.ParseFiles("admin/templates/faqs_new.html"))
-	tmplAdminFAQEdit = template.Must(template.ParseFiles("admin/templates/faqs_edit.html"))
-	tmplAdminLocales = template.Must(template.ParseFiles("admin/templates/locales.html"))
+	tmplAdminFAQs = template.Must(template.ParseFiles("admin/templates/layout.html", "admin/templates/faqs.html"))
+	tmplAdminFAQsNew = template.Must(template.ParseFiles("admin/templates/layout.html", "admin/templates/faqs_new.html"))
+	tmplAdminFAQEdit = template.Must(template.ParseFiles("admin/templates/layout.html", "admin/templates/faqs_edit.html"))
+	tmplAdminLocales = template.Must(template.ParseFiles("admin/templates/layout.html", "admin/templates/locales.html"))
 	tmplAdminLogin = template.Must(template.ParseFiles("admin/templates/login.html"))
 }
 
 func mustExecuteTemplate(tmpl *template.Template, wr io.Writer, data interface{}) {
+	err := tmpl.ExecuteTemplate(wr, "layout", data)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func mustExecuteTempl(tmpl *template.Template, wr io.Writer, data interface{}) {
 	err := tmpl.Execute(wr, data)
 	if err != nil {
 		panic(err)
@@ -542,7 +549,7 @@ func getAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		PageTitle: "Admin / Login",
 		// FAQs:      faqs,
 	}
-	mustExecuteTemplate(tmplAdminLogin, w, data)
+	mustExecuteTempl(tmplAdminLogin, w, data)
 }
 
 func getAdminFAQsNew(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -681,14 +688,7 @@ func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		PageTitle: "Admin / Languages",
 		Locales:   supportedLocales,
 	}
-
-	var tmpl *template.Template
-	tmpl = template.Must(template.ParseFiles("admin/templates/layout.html", "admin/templates/locales.html"))
-	err := tmpl.ExecuteTemplate(w, "layout", data)
-	if err != nil {
-		panic(err)
-	}
-	// mustExecuteTemplate(tmplAdminLocales, w, data)
+	mustExecuteTemplate(tmplAdminLocales, w, data)
 }
 
 func postAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
