@@ -434,13 +434,6 @@ func mustExecuteTemplate(tmpl *template.Template, wr io.Writer, data interface{}
 	}
 }
 
-func mustExecuteTempl(tmpl *template.Template, wr io.Writer, data interface{}) {
-	err := tmpl.Execute(wr, data)
-	if err != nil {
-		panic(err)
-	}
-}
-
 func createJWT(expiry time.Time) string {
 	key := []byte(jwtKey)
 	sig, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.HS256, Key: key}, (&jose.SignerOptions{}).WithType("JWT"))
@@ -549,7 +542,10 @@ func getAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		PageTitle: "Admin / Login",
 		// FAQs:      faqs,
 	}
-	mustExecuteTempl(tmplAdminLogin, w, data)
+	err := tmplAdminLogin.Execute(wr, data)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func getAdminFAQsNew(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
