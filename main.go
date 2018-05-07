@@ -542,7 +542,7 @@ func getAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		PageTitle: "Admin / Login",
 		// FAQs:      faqs,
 	}
-	err := tmplAdminLogin.Execute(wr, data)
+	err := tmplAdminLogin.Execute(w, data)
 	if err != nil {
 		panic(err)
 	}
