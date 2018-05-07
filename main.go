@@ -29,6 +29,20 @@ import (
 
 var db *sql.DB
 
+type MenuEntry struct {
+	Name   string
+	URL    string
+	Active bool
+}
+
+func menuBar(activeItem string) []MenuEntry {
+	mb := []MenuEntry{
+		MenuEntry{Name: "FAQs", URL: "/admin/faqs", Active: activeItem == "FAQs"},
+		MenuEntry{Name: "Languages", URL: "/admin/locales", Active: activeItem == "Languages"},
+	}
+	return mb
+}
+
 type Locale struct {
 	Code        string `json:"code"`
 	NameEnglish string `json:"name_en,omitempty"`    // Name in English
@@ -393,23 +407,27 @@ func createCategory(db *sql.DB) (*Category, error) {
 
 type FAQsPageData struct {
 	PageTitle string
+	MenuBar   []MenuEntry
 	Locales   []Locale
 	FAQs      []FAQ
 }
 
 type FAQsNewPageData struct {
 	PageTitle     string
+	MenuBar       []MenuEntry
 	DefaultLocale Locale
 }
 
 type FAQEditPageData struct {
 	PageTitle string
+	MenuBar   []MenuEntry
 	Locales   []Locale
 	FAQ       FAQ
 }
 
 type LocalesPageData struct {
 	PageTitle string
+	MenuBar   []MenuEntry
 	Locales   []Locale
 }
 
@@ -532,6 +550,7 @@ func getAdminFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	}
 	data := FAQsPageData{
 		PageTitle: "Admin / FAQs",
+		MenuBar:   menuBar("FAQs"),
 		FAQs:      faqs,
 	}
 	mustExecuteTemplate(tmplAdminFAQs, w, data)
@@ -540,7 +559,7 @@ func getAdminFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 func getAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	data := FAQsPageData{
 		PageTitle: "Admin / Login",
-		// FAQs:      faqs,
+		MenuBar:   menuBar("FAQs"),
 	}
 	err := tmplAdminLogin.Execute(w, data)
 	if err != nil {
@@ -551,6 +570,7 @@ func getAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 func getAdminFAQsNew(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	data := FAQsNewPageData{
 		PageTitle:     "Admin / New FAQ",
+		MenuBar:       menuBar("FAQs"),
 		DefaultLocale: getDefaultLocale(),
 	}
 	mustExecuteTemplate(tmplAdminFAQsNew, w, data)
@@ -586,6 +606,7 @@ func getAdminFAQsEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 
 	data := FAQEditPageData{
 		PageTitle: "Admin / Edit FAQ",
+		MenuBar:   menuBar("FAQs"),
 		FAQ:       *faq,
 	}
 	mustExecuteTemplate(tmplAdminFAQEdit, w, data)
@@ -682,6 +703,7 @@ func updateSearchIndex(db *sql.DB) error {
 func getAdminLocales(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	data := LocalesPageData{
 		PageTitle: "Admin / Languages",
+		MenuBar:   menuBar("Languages"),
 		Locales:   supportedLocales,
 	}
 	mustExecuteTemplate(tmplAdminLocales, w, data)

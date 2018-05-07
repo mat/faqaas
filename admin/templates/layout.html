@@ -27,12 +27,17 @@
 
     <div class="collapse navbar-collapse" id="navbarsExampleDefault">
       <ul class="navbar-nav mr-auto">
+        {{range .MenuBar}}
+        {{if .Active}}
         <li class="nav-item active">
-          <a class="nav-link" href="/admin/faqs">FAQs <span class="sr-only">(current)</span></a>
+          <a class="nav-link" href="{{.URL}}">{{.Name}} <span class="sr-only">(current)</span></a>
         </li>
+        {{else}}
         <li class="nav-item">
-          <a class="nav-link" href="/admin/locales">Languages</a>
+          <a class="nav-link" href="{{.URL}}">{{.Name}}</a>
         </li>
+        {{end}}
+        {{end}}
       </ul>
     </div>
   </nav>
@@ -51,4 +56,4 @@
 
   </body>
   </html>
-{{ end }}
+  {{ end }}
