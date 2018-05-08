@@ -1,6 +1,8 @@
 # FAQs as a Service (faqaas)
 
 
+[![Build Status](https://travis-ci.com/mat/faqaas.svg?branch=master)](https://travis-ci.com/mat/faqaas)
+
 ## DB Setup
 
 ```
