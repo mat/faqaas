@@ -734,7 +734,7 @@ func hashPassword(password string) (string, error) {
 
 const (
 	authCookieName       = "Authorization"
-	adminSessionDuration = 1.0 * time.Hour
+	adminSessionDuration = 24 * time.Hour
 )
 
 func setAuthCookie(w http.ResponseWriter) {
