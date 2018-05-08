@@ -1,3 +1,7 @@
+# FAQs as a Service (faqaas)
+
+
+## DB Setup
 
 ```
 psql -U postgres
@@ -56,7 +60,9 @@ INSERT INTO faq_texts (faq_id,locale,question,answer) VALUES (10,'de', 'Wer hat 
 
 ```
 
-## GET /locales
+## API
+
+### GET /locales
 	[
 	  {
 	    "code": "en",
@@ -84,6 +90,11 @@ INSERT INTO faq_texts (faq_id,locale,question,answer) VALUES (10,'de', 'Wer hat 
 	    "locale_name": "中文"
 	  }
 	]
+
+
+## Configuration
+
+See [start_server.example](https://github.com/mat/faqaas/blob/master/start_server.example) for a list of environment variables.
 
 ## Heroku / Setup
 
