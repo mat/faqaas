@@ -39,5 +39,5 @@
 
 [metadata.heroku]
   root-package = "github.com/mat/faqaas"
-  go-version = "go1.10"
+  go-version = "go1.10.3"
   install = [ "./..." ]
