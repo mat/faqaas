@@ -9,4 +9,4 @@ export ADMIN_PASSWORD='$2a$12$AfzzMbT65vzPrF0DegdrZO39rHe.aABxMM6GQfKihkv4xh/YW.
 export HTTP_ALLOWED=false
 export API_KEY=deadbeef
 
-go run main.go
+go run admin/main.go

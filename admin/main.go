@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -438,11 +439,16 @@ var tmplAdminLocales *template.Template
 var tmplAdminLogin *template.Template
 
 func init() {
-	tmplAdminFAQs = template.Must(template.ParseFiles("admin/templates/layout.html", "admin/templates/faqs.html"))
-	tmplAdminFAQsNew = template.Must(template.ParseFiles("admin/templates/layout.html", "admin/templates/faqs_new.html"))
-	tmplAdminFAQEdit = template.Must(template.ParseFiles("admin/templates/layout.html", "admin/templates/faqs_edit.html"))
-	tmplAdminLocales = template.Must(template.ParseFiles("admin/templates/layout.html", "admin/templates/locales.html"))
-	tmplAdminLogin = template.Must(template.ParseFiles("admin/templates/login.html"))
+	layoutTemplatePath := templPath("layout.html")
+	tmplAdminFAQs = template.Must(template.ParseFiles(layoutTemplatePath, templPath("faqs.html")))
+	tmplAdminFAQsNew = template.Must(template.ParseFiles(layoutTemplatePath, templPath("faqs_new.html")))
+	tmplAdminFAQEdit = template.Must(template.ParseFiles(layoutTemplatePath, templPath("faqs_edit.html")))
+	tmplAdminLocales = template.Must(template.ParseFiles(layoutTemplatePath, templPath("locales.html")))
+	tmplAdminLogin = template.Must(template.ParseFiles(templPath("login.html")))
+}
+
+func templPath(fileName string) string {
+	return filepath.Join("admin/templates/", fileName)
 }
 
 func mustExecuteTemplate(tmpl *template.Template, wr io.Writer, data interface{}) {
