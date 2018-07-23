@@ -1,3 +1,3 @@
 
 test:
-	go test -v github.com/mat/faqaas
+	go test -v github.com/mat/faqaas/admin
