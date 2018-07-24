@@ -10,11 +10,12 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// TODO https://stackoverflow.com/questions/25337126/testing-http-routes-in-golang#25585458
+
 func TestGetAdminIndex(t *testing.T) {
 	body := bytes.NewBufferString("hello")
 	handle := getAdmin
 	resp, err := doRequest("GET", "/", body, handle)
-
 	if err != nil {
 		panic(err)
 	}
@@ -28,7 +29,20 @@ func TestGetAdminLogin(t *testing.T) {
 	body := bytes.NewBufferString("")
 	handle := getAdminLogin
 	resp, err := doRequest("GET", "/admin/login", body, handle)
+	if err != nil {
+		panic(err)
+	}
 
+	expectBodyContains(t, resp, `<title>Admin / Login</title>`)
+	expectBodyContains(t, resp, `<form action="/admin/login" method="post"`)
+	expectStatus(t, resp, 200)
+}
+
+func xxxTestGetAdminFAQs(t *testing.T) {
+	// Make this work: introduce FAQRepository
+	body := bytes.NewBufferString("")
+	handle := getAdminFAQs
+	resp, err := doRequest("GET", "/admin/faqs", body, handle)
 	if err != nil {
 		panic(err)
 	}
