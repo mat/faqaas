@@ -1,0 +1,13 @@
+#!/bin/bash
+set -euxo pipefail
+
+export DATABASE_URL=postgres://postgres:@localhost/faqaas?sslmode=disable
+export PORT=8080
+export SUPPORTED_LOCALES=en,de,fr,es,it,nl,pt,pt-BR,da,sv,no,ru,ar,zh
+export JWT_KEY=secret # openssl rand -hex 32
+export ADMIN_PASSWORD='$2a$12$AfzzMbT65vzPrF0DegdrZO39rHe.aABxMM6GQfKihkv4xh/YW.RKm' # secret
+export HTTP_ALLOWED=true
+export API_KEY=deadbeef
+export FAQAAS_SERVER_ROOT=`pwd`
+
+go test -v github.com/mat/faqaas/admin/...

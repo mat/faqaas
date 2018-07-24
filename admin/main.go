@@ -448,7 +448,12 @@ func init() {
 }
 
 func templPath(fileName string) string {
-	return filepath.Join("admin/templates/", fileName)
+	root := os.Getenv("FAQAAS_SERVER_ROOT")
+	// if root == "" {
+	// 	root = "./admin/templates"
+	// }
+
+	return filepath.Join(root, "admin/templates/", fileName)
 }
 
 func mustExecuteTemplate(tmpl *template.Template, wr io.Writer, data interface{}) {
