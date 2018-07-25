@@ -38,8 +38,9 @@ func TestGetAdminLogin(t *testing.T) {
 	expectStatus(t, resp, 200)
 }
 
-func xxxTestGetAdminFAQs(t *testing.T) {
-	// Make this work: introduce FAQRepository
+func TestGetAdminFAQs(t *testing.T) {
+	faqRepository = &mockDB{}
+
 	body := bytes.NewBufferString("")
 	handle := getAdminFAQs
 	resp, err := doRequest("GET", "/admin/faqs", body, handle)
@@ -47,8 +48,10 @@ func xxxTestGetAdminFAQs(t *testing.T) {
 		panic(err)
 	}
 
-	expectBodyContains(t, resp, `<title>Admin / Login</title>`)
-	expectBodyContains(t, resp, `<form action="/admin/login" method="post"`)
+	expectBodyContains(t, resp, `<title>Admin / FAQs</title>`)
+	expectBodyContains(t, resp, `href="/admin/faqs/edit/123"`)
+	expectBodyContains(t, resp, `href="/admin/faqs/edit/456"`)
+	expectBodyContains(t, resp, `href="/admin/faqs/edit/789"`)
 	expectStatus(t, resp, 200)
 }
 

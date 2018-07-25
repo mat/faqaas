@@ -28,7 +28,56 @@ import (
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
-var db *sql.DB
+///// FAQRepository - Start
+
+var faqRepository FAQRepository
+var dbConn *sql.DB
+
+type FAQRepository interface {
+	AllFAQs() ([]FAQ, error)
+	FAQById(id int) (*FAQ, error)
+}
+
+type DB struct {
+	*sql.DB
+}
+
+func NewDB(dataSourceName string) (*DB, error) {
+	db, err := sql.Open("postgres", dataSourceName)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	dbConn = db // TODO remove this!
+	return &DB{db}, nil
+}
+
+func (db *DB) AllFAQs() ([]FAQ, error) {
+	return getAllFAQs(db.DB)
+}
+
+func (db *DB) FAQById(id int) (*FAQ, error) {
+	return getFAQ(db.DB, id)
+}
+
+type mockDB struct{}
+
+func (mdb *mockDB) AllFAQs() ([]FAQ, error) {
+	faqs := make([]FAQ, 0)
+	faqs = append(faqs, FAQ{ID: 123})
+	faqs = append(faqs, FAQ{ID: 456})
+	faqs = append(faqs, FAQ{ID: 789})
+	return faqs, nil
+}
+
+func (mdb *mockDB) FAQById(id int) (*FAQ, error) {
+	f := FAQ{ID: id}
+	return &f, nil
+}
+
+///// FAQRepository - End
 
 type MenuEntry struct {
 	Name   string
@@ -324,7 +373,7 @@ func searchFAQs(db *sql.DB, lang string, query string) ([]FAQ, error) {
 const internalError = "internal error"
 
 func getCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	categories, err := getAllCategories(db)
+	categories, err := getAllCategories(dbConn)
 	if err != nil {
 		http.Error(w, internalError, http.StatusInternalServerError)
 		return
@@ -340,7 +389,7 @@ func writeJSON(w http.ResponseWriter, data interface{}) {
 }
 
 func getFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	faqs, err := getAllFAQs(db)
+	faqs, err := faqRepository.AllFAQs()
 	if err != nil {
 		http.Error(w, internalError, http.StatusInternalServerError)
 		return
@@ -356,7 +405,7 @@ func getSingleFAQ(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		panic(err)
 	}
 
-	faq, err := getFAQ(db, id)
+	faq, err := faqRepository.FAQById(id)
 	if err != nil {
 		panic(err)
 	}
@@ -384,7 +433,7 @@ func getSearchFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	langTag, _ := language.MatchStrings(languageMatcher, lang, accept)
 	fmt.Printf("lang %s matched %s\n", lang, langTag)
 
-	faqs, err := searchFAQs(db, langTag.String(), query)
+	faqs, err := searchFAQs(dbConn, langTag.String(), query)
 	if err != nil {
 		http.Error(w, internalError, http.StatusInternalServerError)
 		return
@@ -555,7 +604,7 @@ func redirectToAdminLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAdminFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	faqs, err := getAllFAQs(db)
+	faqs, err := faqRepository.AllFAQs()
 	if err != nil {
 		panic(err)
 	}
@@ -594,7 +643,7 @@ func getAdminFAQsEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		panic(err)
 	}
 
-	faq, err := getFAQ(db, id)
+	faq, err := getFAQ(dbConn, id)
 	if err != nil {
 		panic(err)
 	}
@@ -646,8 +695,8 @@ func postAdminFAQsUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		panic(err)
 	}
 
-	err = saveFAQText(db, faqID, &text)
-	updateSearchIndex(db)
+	err = saveFAQText(dbConn, faqID, &text)
+	updateSearchIndex(dbConn)
 	if err != nil {
 		http.Error(w, internalError, http.StatusInternalServerError)
 	} else {
@@ -666,8 +715,8 @@ func postAdminFAQsDelete(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		panic(err)
 	}
 
-	err = deleteFAQ(db, faqID)
-	updateSearchIndex(db)
+	err = deleteFAQ(dbConn, faqID)
+	updateSearchIndex(dbConn)
 	if err != nil {
 		http.Error(w, internalError, http.StatusInternalServerError)
 	} else {
@@ -685,15 +734,15 @@ func postAdminFAQsCreate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	loc := Locale{Code: form.localeCode}
 	text := FAQText{Question: form.question, Answer: form.answer, Locale: loc}
 
-	faq, err := createFAQ(db)
-	updateSearchIndex(db)
+	faq, err := createFAQ(dbConn)
+	updateSearchIndex(dbConn)
 	if err != nil {
 		http.Error(w, internalError, http.StatusInternalServerError)
 		return
 	}
 
-	err = saveFAQText(db, faq.ID, &text)
-	updateSearchIndex(db)
+	err = saveFAQText(dbConn, faq.ID, &text)
+	updateSearchIndex(dbConn)
 	if err != nil {
 		http.Error(w, internalError, http.StatusInternalServerError)
 	} else {
@@ -766,20 +815,13 @@ func setAuthCookie(w http.ResponseWriter) {
 
 func main() {
 	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL != "" {
-		var err error
-		db, err = sql.Open("postgres", databaseURL)
-		if err != nil {
-			panic(err)
-		}
-	} else {
+	if databaseURL == "" {
 		panic("DATABASE_URL not set")
 	}
-	defer db.Close()
-
-	err := db.Ping()
+	var err error
+	faqRepository, err = NewDB(databaseURL)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	router := httprouter.New()
