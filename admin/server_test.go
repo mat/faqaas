@@ -13,8 +13,7 @@ import (
 // TODO https://stackoverflow.com/questions/25337126/testing-http-routes-in-golang#25585458
 
 func TestGetAdminIndex(t *testing.T) {
-	body := bytes.NewBufferString("hello")
-	resp, err := doRequest("GET", "/admin", body)
+	resp, err := doRequest("GET", "/admin", emptyBody())
 	if err != nil {
 		panic(err)
 	}
@@ -25,8 +24,7 @@ func TestGetAdminIndex(t *testing.T) {
 }
 
 func TestGetAdminLogin(t *testing.T) {
-	body := bytes.NewBufferString("")
-	resp, err := doRequest("GET", "/admin/login", body)
+	resp, err := doRequest("GET", "/admin/login", emptyBody())
 	if err != nil {
 		panic(err)
 	}
@@ -38,9 +36,7 @@ func TestGetAdminLogin(t *testing.T) {
 
 func TestGetAdminFAQs(t *testing.T) {
 	faqRepository = &mockDB{}
-
-	body := bytes.NewBufferString("")
-	resp, err := doRequest("GET", "/admin/faqs", body)
+	resp, err := doRequest("GET", "/admin/faqs", emptyBody())
 	if err != nil {
 		panic(err)
 	}
@@ -85,4 +81,8 @@ func expectHeader(t *testing.T, resp *httptest.ResponseRecorder, headerName stri
 		t.Errorf("wrong header %v: is '%v' but wanted '%v'",
 			headerName, resp.Header().Get(headerName), expected)
 	}
+}
+
+func emptyBody() *bytes.Buffer {
+	return bytes.NewBufferString("hello")
 }
