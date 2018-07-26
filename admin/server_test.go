@@ -14,8 +14,7 @@ import (
 
 func TestGetAdminIndex(t *testing.T) {
 	body := bytes.NewBufferString("hello")
-	handle := getAdmin
-	resp, err := doRequest("GET", "/admin", body, handle)
+	resp, err := doRequest("GET", "/admin", body)
 	if err != nil {
 		panic(err)
 	}
@@ -27,8 +26,7 @@ func TestGetAdminIndex(t *testing.T) {
 
 func TestGetAdminLogin(t *testing.T) {
 	body := bytes.NewBufferString("")
-	handle := getAdminLogin
-	resp, err := doRequest("GET", "/admin/login", body, handle)
+	resp, err := doRequest("GET", "/admin/login", body)
 	if err != nil {
 		panic(err)
 	}
@@ -42,8 +40,7 @@ func TestGetAdminFAQs(t *testing.T) {
 	faqRepository = &mockDB{}
 
 	body := bytes.NewBufferString("")
-	handle := getAdminFAQs
-	resp, err := doRequest("GET", "/admin/faqs", body, handle)
+	resp, err := doRequest("GET", "/admin/faqs", body)
 	if err != nil {
 		panic(err)
 	}
@@ -55,7 +52,7 @@ func TestGetAdminFAQs(t *testing.T) {
 	expectStatus(t, resp, 200)
 }
 
-func doRequest(method, uri string, body *bytes.Buffer, handle httprouter.Handle) (*httptest.ResponseRecorder, error) {
+func doRequest(method, uri string, body *bytes.Buffer) (*httptest.ResponseRecorder, error) {
 	resp := httptest.NewRecorder()
 	req, err := http.NewRequest(method, uri, body)
 	if err != nil {
@@ -66,7 +63,6 @@ func doRequest(method, uri string, body *bytes.Buffer, handle httprouter.Handle)
 	router.GET("/admin", getAdmin)
 	router.GET("/admin/faqs", getAdminFAQs)
 	router.GET("/admin/login", getAdminLogin)
-	// router.Handle(method, uri, handle)
 	router.ServeHTTP(resp, req)
 	return resp, nil
 }
