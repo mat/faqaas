@@ -70,7 +70,7 @@ func doRequest(method, uri string, body *bytes.Buffer, handle httprouter.Handle)
 
 func expectStatus(t *testing.T, resp *httptest.ResponseRecorder, expected int) {
 	if status := resp.Code; status != expected {
-		t.Errorf("wrong status code: is %v but wanted %v", expected, status)
+		t.Errorf("wrong status code: is %v but wanted %v", status, expected)
 	}
 }
 
