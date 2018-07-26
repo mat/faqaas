@@ -643,7 +643,7 @@ func getAdminFAQsEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		panic(err)
 	}
 
-	faq, err := getFAQ(dbConn, id)
+	faq, err := faqRepository.FAQById(id)
 	if err != nil {
 		panic(err)
 	}

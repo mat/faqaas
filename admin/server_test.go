@@ -18,7 +18,6 @@ func TestGetAdminIndex(t *testing.T) {
 		panic(err)
 	}
 
-	expectBodyContains(t, resp, `<a href="/admin/faqs">Found</a>`)
 	expectStatus(t, resp, 302)
 	expectHeader(t, resp, "Location", "/admin/faqs")
 }
@@ -29,9 +28,10 @@ func TestGetAdminLogin(t *testing.T) {
 		panic(err)
 	}
 
+	expectStatus(t, resp, 200)
 	expectBodyContains(t, resp, `<title>Admin / Login</title>`)
 	expectBodyContains(t, resp, `<form action="/admin/login" method="post"`)
-	expectStatus(t, resp, 200)
+
 }
 
 func TestGetAdminFAQs(t *testing.T) {
@@ -41,11 +41,52 @@ func TestGetAdminFAQs(t *testing.T) {
 		panic(err)
 	}
 
+	expectStatus(t, resp, 200)
 	expectBodyContains(t, resp, `<title>Admin / FAQs</title>`)
 	expectBodyContains(t, resp, `href="/admin/faqs/edit/123"`)
 	expectBodyContains(t, resp, `href="/admin/faqs/edit/456"`)
 	expectBodyContains(t, resp, `href="/admin/faqs/edit/789"`)
+}
+
+func TestGetAdminFAQsNew(t *testing.T) {
+	faqRepository = &mockDB{}
+	resp, err := doRequest("GET", "/admin/faqs/new", emptyBody())
+	if err != nil {
+		panic(err)
+	}
+
 	expectStatus(t, resp, 200)
+	expectBodyContains(t, resp, `<title>Admin / New FAQ</title>`)
+	expectBodyContains(t, resp, `<form action="/admin/faqs/create" method="post">`)
+}
+
+func TestGetAdminFAQsEdit(t *testing.T) {
+	faqRepository = &mockDB{}
+	resp, err := doRequest("GET", "/admin/faqs/edit/123", emptyBody())
+	if err != nil {
+		panic(err)
+	}
+
+	expectStatus(t, resp, 200)
+	expectBodyContains(t, resp, `<title>Admin / Edit FAQ</title>`)
+	expectBodyContains(t, resp, `<form action="/admin/faqs/delete" method="post">`)
+}
+
+func TestGetAdminLocales(t *testing.T) {
+	faqRepository = &mockDB{}
+	resp, err := doRequest("GET", "/admin/locales", emptyBody())
+	if err != nil {
+		panic(err)
+	}
+
+	expectStatus(t, resp, 200)
+	expectBodyContains(t, resp, `<title>Admin / Languages</title>`)
+
+	expectBodyContains(t, resp, `<td>de</td>`)
+	expectBodyContains(t, resp, `German (Deutsch)`)
+
+	expectBodyContains(t, resp, `<td>es</td>`)
+	expectBodyContains(t, resp, `Spanish (español)`)
 }
 
 func doRequest(method, uri string, body *bytes.Buffer) (*httptest.ResponseRecorder, error) {
@@ -59,6 +100,9 @@ func doRequest(method, uri string, body *bytes.Buffer) (*httptest.ResponseRecord
 	router.GET("/admin", getAdmin)
 	router.GET("/admin/faqs", getAdminFAQs)
 	router.GET("/admin/login", getAdminLogin)
+	router.GET("/admin/locales", getAdminLocales)
+	router.GET("/admin/faqs/new", getAdminFAQsNew)
+	router.GET("/admin/faqs/edit/:id", getAdminFAQsEdit)
 	router.ServeHTTP(resp, req)
 	return resp, nil
 }
