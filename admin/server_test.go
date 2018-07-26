@@ -15,7 +15,7 @@ import (
 func TestGetAdminIndex(t *testing.T) {
 	body := bytes.NewBufferString("hello")
 	handle := getAdmin
-	resp, err := doRequest("GET", "/", body, handle)
+	resp, err := doRequest("GET", "/admin", body, handle)
 	if err != nil {
 		panic(err)
 	}
@@ -63,7 +63,10 @@ func doRequest(method, uri string, body *bytes.Buffer, handle httprouter.Handle)
 	}
 
 	router := httprouter.New()
-	router.Handle(method, uri, handle)
+	router.GET("/admin", getAdmin)
+	router.GET("/admin/faqs", getAdminFAQs)
+	router.GET("/admin/login", getAdminLogin)
+	// router.Handle(method, uri, handle)
 	router.ServeHTTP(resp, req)
 	return resp, nil
 }
