@@ -30,6 +30,7 @@ func TestGetAdminLogin(t *testing.T) {
 
 func TestPostAdminLogin(t *testing.T) {
 	body := body("email=admin&password=secret")
+	isAdminFunc = alwaysAdminFunc
 	header := http.Header{}
 	header.Set("Content-Type", "application/x-www-form-urlencoded")
 
@@ -59,7 +60,6 @@ func TestGetAdminFAQsNew(t *testing.T) {
 	expectBodyContains(t, resp, `<title>Admin / New FAQ</title>`)
 	expectBodyContains(t, resp, `<form action="/admin/faqs/create" method="post">`)
 }
-
 func TestGetAdminFAQsEdit(t *testing.T) {
 	faqRepository = &mockDB{}
 	resp := doRequest("GET", "/admin/faqs/edit/123", emptyBody())
@@ -175,3 +175,5 @@ func body(str string) *bytes.Buffer {
 func emptyBody() *bytes.Buffer {
 	return bytes.NewBufferString("hello")
 }
+
+func alwaysAdminFunc(string, string) bool { return true }

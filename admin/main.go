@@ -775,7 +775,7 @@ func postAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
-	if email == "admin" && isAdminPassword(password) {
+	if isAdminFunc(email, password) {
 		setAuthCookie(w)
 		http.Redirect(w, r, "/admin/faqs", http.StatusFound)
 	} else {
@@ -783,7 +783,16 @@ func postAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	}
 }
 
-func isAdminPassword(password string) bool {
+func init() {
+	isAdminFunc = isAdminPassword
+}
+
+var isAdminFunc func(string, string) bool
+
+func isAdminPassword(email string, password string) bool {
+	if email != "admin" {
+		return false
+	}
 	err := bcrypt.CompareHashAndPassword([]byte(adminPasswordHash), []byte(password))
 	return err == nil
 }
