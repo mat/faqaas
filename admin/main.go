@@ -776,7 +776,6 @@ func postAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	password := r.FormValue("password")
 
 	if email == "admin" && isAdminPassword(password) {
-		fmt.Println("Logged in as admin!")
 		setAuthCookie(w)
 		http.Redirect(w, r, "/admin/faqs", http.StatusFound)
 	} else {
