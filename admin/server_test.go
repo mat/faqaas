@@ -14,20 +14,14 @@ import (
 // TODO https://stackoverflow.com/questions/25337126/testing-http-routes-in-golang#25585458
 
 func TestGetAdminIndex(t *testing.T) {
-	resp, err := doRequest("GET", "/admin", emptyBody())
-	if err != nil {
-		panic(err)
-	}
+	resp := doRequest("GET", "/admin", emptyBody())
 
 	expectStatus(t, resp, 302)
 	expectHeader(t, resp, "Location", "/admin/faqs")
 }
 
 func TestGetAdminLogin(t *testing.T) {
-	resp, err := doRequest("GET", "/admin/login", emptyBody())
-	if err != nil {
-		panic(err)
-	}
+	resp := doRequest("GET", "/admin/login", emptyBody())
 
 	expectStatus(t, resp, 200)
 	expectBodyContains(t, resp, `<title>Admin / Login</title>`)
@@ -39,10 +33,7 @@ func TestPostAdminLogin(t *testing.T) {
 	header := http.Header{}
 	header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := doRequestWithHeader("POST", "/admin/login", body, &header)
-	if err != nil {
-		panic(err)
-	}
+	resp := doRequestWithHeader("POST", "/admin/login", body, &header)
 
 	expectStatus(t, resp, 302)
 	expectHeader(t, resp, "Location", "/admin/faqs")
@@ -51,10 +42,7 @@ func TestPostAdminLogin(t *testing.T) {
 
 func TestGetAdminFAQs(t *testing.T) {
 	faqRepository = &mockDB{}
-	resp, err := doRequest("GET", "/admin/faqs", emptyBody())
-	if err != nil {
-		panic(err)
-	}
+	resp := doRequest("GET", "/admin/faqs", emptyBody())
 
 	expectStatus(t, resp, 200)
 	expectBodyContains(t, resp, `<title>Admin / FAQs</title>`)
@@ -65,10 +53,7 @@ func TestGetAdminFAQs(t *testing.T) {
 
 func TestGetAdminFAQsNew(t *testing.T) {
 	faqRepository = &mockDB{}
-	resp, err := doRequest("GET", "/admin/faqs/new", emptyBody())
-	if err != nil {
-		panic(err)
-	}
+	resp := doRequest("GET", "/admin/faqs/new", emptyBody())
 
 	expectStatus(t, resp, 200)
 	expectBodyContains(t, resp, `<title>Admin / New FAQ</title>`)
@@ -77,10 +62,7 @@ func TestGetAdminFAQsNew(t *testing.T) {
 
 func TestGetAdminFAQsEdit(t *testing.T) {
 	faqRepository = &mockDB{}
-	resp, err := doRequest("GET", "/admin/faqs/edit/123", emptyBody())
-	if err != nil {
-		panic(err)
-	}
+	resp := doRequest("GET", "/admin/faqs/edit/123", emptyBody())
 
 	expectStatus(t, resp, 200)
 	expectBodyContains(t, resp, `<title>Admin / Edit FAQ</title>`)
@@ -89,10 +71,7 @@ func TestGetAdminFAQsEdit(t *testing.T) {
 
 func TestGetAdminLocales(t *testing.T) {
 	faqRepository = &mockDB{}
-	resp, err := doRequest("GET", "/admin/locales", emptyBody())
-	if err != nil {
-		panic(err)
-	}
+	resp := doRequest("GET", "/admin/locales", emptyBody())
 
 	expectStatus(t, resp, 200)
 	expectBodyContains(t, resp, `<title>Admin / Languages</title>`)
@@ -106,10 +85,7 @@ func TestGetAdminLocales(t *testing.T) {
 
 func TestGetAPILanguages(t *testing.T) {
 	faqRepository = &mockDB{}
-	resp, err := doRequest("GET", "/api/languages", emptyBody())
-	if err != nil {
-		panic(err)
-	}
+	resp := doRequest("GET", "/api/languages", emptyBody())
 
 	expectStatus(t, resp, 200)
 	expectHeader(t, resp, "Content-Type", "application/json")
@@ -118,10 +94,7 @@ func TestGetAPILanguages(t *testing.T) {
 
 func TestGetAPIFAQs(t *testing.T) {
 	faqRepository = &mockDB{}
-	resp, err := doRequest("GET", "/api/faqs", emptyBody())
-	if err != nil {
-		panic(err)
-	}
+	resp := doRequest("GET", "/api/faqs", emptyBody())
 
 	expectStatus(t, resp, 200)
 	expectHeader(t, resp, "Content-Type", "application/json")
@@ -130,28 +103,25 @@ func TestGetAPIFAQs(t *testing.T) {
 
 func TestGetAPISingleFAQ(t *testing.T) {
 	faqRepository = &mockDB{}
-	resp, err := doRequest("GET", "/api/faqs/123", emptyBody())
-	if err != nil {
-		panic(err)
-	}
+	resp := doRequest("GET", "/api/faqs/123", emptyBody())
 
 	expectStatus(t, resp, 200)
 	expectHeader(t, resp, "Content-Type", "application/json")
 	expectBodyContains(t, resp, `{"id":123,"texts":[{"locale":{"code":"de"},"question":"Welcher Tag ist heute?","answer":"Freitag"}]}`)
 }
 
-func doRequest(method, uri string, body *bytes.Buffer) (*httptest.ResponseRecorder, error) {
+func doRequest(method, uri string, body *bytes.Buffer) *httptest.ResponseRecorder {
 	return doRequestWithHeader(method, uri, body, nil)
 }
 
-func doRequestWithHeader(method, uri string, body *bytes.Buffer, header *http.Header) (*httptest.ResponseRecorder, error) {
+func doRequestWithHeader(method, uri string, body *bytes.Buffer, header *http.Header) *httptest.ResponseRecorder {
 	resp := httptest.NewRecorder()
 	req, err := http.NewRequest(method, uri, body)
+	if err != nil {
+		panic(err)
+	}
 	if header != nil {
 		req.Header = *header
-	}
-	if err != nil {
-		return nil, err
 	}
 
 	router := httprouter.New()
@@ -167,7 +137,7 @@ func doRequestWithHeader(method, uri string, body *bytes.Buffer, header *http.He
 	router.GET("/api/faqs", getFAQs)
 	router.GET("/api/faqs/:id", getSingleFAQ)
 	router.ServeHTTP(resp, req)
-	return resp, nil
+	return resp
 }
 
 func expectStatus(t *testing.T, resp *httptest.ResponseRecorder, expected int) {
