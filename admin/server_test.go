@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -31,7 +32,21 @@ func TestGetAdminLogin(t *testing.T) {
 	expectStatus(t, resp, 200)
 	expectBodyContains(t, resp, `<title>Admin / Login</title>`)
 	expectBodyContains(t, resp, `<form action="/admin/login" method="post"`)
+}
 
+func TestPostAdminLogin(t *testing.T) {
+	body := body("email=admin&password=secret")
+	header := http.Header{}
+	header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := doRequestWithHeader("POST", "/admin/login", body, &header)
+	if err != nil {
+		panic(err)
+	}
+
+	expectStatus(t, resp, 302)
+	expectHeader(t, resp, "Location", "/admin/faqs")
+	expectHeaderMatches(t, resp, "Set-Cookie", "^Authorization.*Path=/admin.*HttpOnly$")
 }
 
 func TestGetAdminFAQs(t *testing.T) {
@@ -89,9 +104,52 @@ func TestGetAdminLocales(t *testing.T) {
 	expectBodyContains(t, resp, `Spanish (español)`)
 }
 
+func TestGetAPILanguages(t *testing.T) {
+	faqRepository = &mockDB{}
+	resp, err := doRequest("GET", "/api/languages", emptyBody())
+	if err != nil {
+		panic(err)
+	}
+
+	expectStatus(t, resp, 200)
+	expectHeader(t, resp, "Content-Type", "application/json")
+	expectBodyContains(t, resp, `[{"code":"en","name_en":"English","name_local":"English"},{"code":"de","name_en":"German","name_local":"Deutsch"},{"code":"fr","name_en":"French","name_local":"français"},{"code":"es","name_en":"Spanish","name_local":"español"},{"code":"it","name_en":"Italian","name_local":"italiano"},{"code":"nl","name_en":"Dutch","name_local":"Nederlands"},{"code":"pt","name_en":"Portuguese","name_local":"português"},{"code":"pt-BR","name_en":"Brazilian Portuguese","name_local":"português"},{"code":"da","name_en":"Danish","name_local":"dansk"},{"code":"sv","name_en":"Swedish","name_local":"svenska"},{"code":"no","name_en":"Norwegian Bokmål","name_local":"norsk bokmål"},{"code":"ru","name_en":"Russian","name_local":"русский"},{"code":"ar","name_en":"Arabic","name_local":"العربية"},{"code":"zh","name_en":"Chinese","name_local":"中文"}]`)
+}
+
+func TestGetAPIFAQs(t *testing.T) {
+	faqRepository = &mockDB{}
+	resp, err := doRequest("GET", "/api/faqs", emptyBody())
+	if err != nil {
+		panic(err)
+	}
+
+	expectStatus(t, resp, 200)
+	expectHeader(t, resp, "Content-Type", "application/json")
+	expectBodyContains(t, resp, `[{"id":123,"texts":null},{"id":456,"texts":null},{"id":789,"texts":null}]`)
+}
+
+func TestGetAPISingleFAQ(t *testing.T) {
+	faqRepository = &mockDB{}
+	resp, err := doRequest("GET", "/api/faqs/123", emptyBody())
+	if err != nil {
+		panic(err)
+	}
+
+	expectStatus(t, resp, 200)
+	expectHeader(t, resp, "Content-Type", "application/json")
+	expectBodyContains(t, resp, `{"id":123,"texts":[{"locale":{"code":"de"},"question":"Welcher Tag ist heute?","answer":"Freitag"}]}`)
+}
+
 func doRequest(method, uri string, body *bytes.Buffer) (*httptest.ResponseRecorder, error) {
+	return doRequestWithHeader(method, uri, body, nil)
+}
+
+func doRequestWithHeader(method, uri string, body *bytes.Buffer, header *http.Header) (*httptest.ResponseRecorder, error) {
 	resp := httptest.NewRecorder()
 	req, err := http.NewRequest(method, uri, body)
+	if header != nil {
+		req.Header = *header
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -100,9 +158,14 @@ func doRequest(method, uri string, body *bytes.Buffer) (*httptest.ResponseRecord
 	router.GET("/admin", getAdmin)
 	router.GET("/admin/faqs", getAdminFAQs)
 	router.GET("/admin/login", getAdminLogin)
+	router.POST("/admin/login", postAdminLogin)
 	router.GET("/admin/locales", getAdminLocales)
 	router.GET("/admin/faqs/new", getAdminFAQsNew)
 	router.GET("/admin/faqs/edit/:id", getAdminFAQsEdit)
+
+	router.GET("/api/languages", getLanguages)
+	router.GET("/api/faqs", getFAQs)
+	router.GET("/api/faqs/:id", getSingleFAQ)
 	router.ServeHTTP(resp, req)
 	return resp, nil
 }
@@ -127,6 +190,18 @@ func expectHeader(t *testing.T, resp *httptest.ResponseRecorder, headerName stri
 	}
 }
 
+func expectHeaderMatches(t *testing.T, resp *httptest.ResponseRecorder, headerName string, expectedRegexp string) {
+	var regex = regexp.MustCompile(expectedRegexp)
+	actualHeaderValue := resp.Header().Get(headerName)
+	if !regex.MatchString(actualHeaderValue) {
+		t.Errorf("wrong header %v: '%v' did not match '%v'",
+			headerName, actualHeaderValue, expectedRegexp)
+	}
+}
+
+func body(str string) *bytes.Buffer {
+	return bytes.NewBufferString(str)
+}
 func emptyBody() *bytes.Buffer {
 	return bytes.NewBufferString("hello")
 }

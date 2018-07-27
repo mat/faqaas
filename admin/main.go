@@ -73,7 +73,9 @@ func (mdb *mockDB) AllFAQs() ([]FAQ, error) {
 }
 
 func (mdb *mockDB) FAQById(id int) (*FAQ, error) {
-	f := FAQ{ID: id}
+	texts := make([]FAQText, 0)
+	texts = append(texts, FAQText{Locale: Locale{Code: "de"}, Question: "Welcher Tag ist heute?", Answer: "Freitag"})
+	f := FAQ{ID: id, Texts: texts}
 	return &f, nil
 }
 
