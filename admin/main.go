@@ -36,6 +36,7 @@ var dbConn *sql.DB
 type FAQRepository interface {
 	AllFAQs() ([]FAQ, error)
 	FAQById(id int) (*FAQ, error)
+	SearchFAQs(language string, query string) ([]FAQ, error)
 }
 
 type DB struct {
@@ -62,6 +63,10 @@ func (db *DB) FAQById(id int) (*FAQ, error) {
 	return getFAQ(db.DB, id)
 }
 
+func (db *DB) SearchFAQs(language string, query string) ([]FAQ, error) {
+	return searchFAQs(db.DB, language, query)
+}
+
 type mockDB struct{}
 
 func (mdb *mockDB) AllFAQs() ([]FAQ, error) {
@@ -77,6 +82,10 @@ func (mdb *mockDB) FAQById(id int) (*FAQ, error) {
 	texts = append(texts, FAQText{Locale: Locale{Code: "de"}, Question: "Welcher Tag ist heute?", Answer: "Freitag"})
 	f := FAQ{ID: id, Texts: texts}
 	return &f, nil
+}
+
+func (mdb *mockDB) SearchFAQs(language string, query string) ([]FAQ, error) {
+	return mdb.AllFAQs()
 }
 
 ///// FAQRepository - End
@@ -435,7 +444,7 @@ func getSearchFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	langTag, _ := language.MatchStrings(languageMatcher, lang, accept)
 	fmt.Printf("lang %s matched %s\n", lang, langTag)
 
-	faqs, err := searchFAQs(dbConn, langTag.String(), query)
+	faqs, err := faqRepository.SearchFAQs(langTag.String(), query)
 	if err != nil {
 		http.Error(w, internalError, http.StatusInternalServerError)
 		return

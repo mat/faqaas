@@ -110,6 +110,15 @@ func TestGetAPISingleFAQ(t *testing.T) {
 	expectBodyContains(t, resp, `{"id":123,"texts":[{"locale":{"code":"de"},"question":"Welcher Tag ist heute?","answer":"Freitag"}]}`)
 }
 
+func TestGetAPISearchFAQ(t *testing.T) {
+	faqRepository = &mockDB{}
+	resp := doRequest("GET", "/api/search-faqs?lang=en&query=bar", emptyBody())
+
+	expectStatus(t, resp, 200)
+	expectHeader(t, resp, "Content-Type", "application/json")
+	expectBodyContains(t, resp, `[{"id":123,"texts":null},{"id":456,"texts":null},{"id":789,"texts":null}]`)
+}
+
 func doRequest(method, uri string, body *bytes.Buffer) *httptest.ResponseRecorder {
 	return doRequestWithHeader(method, uri, body, nil)
 }
@@ -136,6 +145,7 @@ func doRequestWithHeader(method, uri string, body *bytes.Buffer, header *http.He
 	router.GET("/api/languages", getLanguages)
 	router.GET("/api/faqs", getFAQs)
 	router.GET("/api/faqs/:id", getSingleFAQ)
+	router.GET("/api/search-faqs", getSearchFAQs)
 	router.ServeHTTP(resp, req)
 	return resp
 }
