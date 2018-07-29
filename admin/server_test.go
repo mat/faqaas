@@ -83,6 +83,14 @@ func TestGetAdminLocales(t *testing.T) {
 	expectBodyContains(t, resp, `Spanish (español)`)
 }
 
+func TestPostAdminFAQsCreate(t *testing.T) {
+	faqRepository = &mockDB{}
+	resp := doRequest("POST", "/admin/faqs/create", emptyBody())
+
+	expectStatus(t, resp, 302)
+	expectHeader(t, resp, "Location", "/admin/faqs/edit/123")
+}
+
 func TestGetAPILanguages(t *testing.T) {
 	faqRepository = &mockDB{}
 	resp := doRequest("GET", "/api/languages", emptyBody())
@@ -141,6 +149,7 @@ func doRequestWithHeader(method, uri string, body *bytes.Buffer, header *http.He
 	router.GET("/admin/locales", getAdminLocales)
 	router.GET("/admin/faqs/new", getAdminFAQsNew)
 	router.GET("/admin/faqs/edit/:id", getAdminFAQsEdit)
+	router.POST("/admin/faqs/create", postAdminFAQsCreate)
 
 	router.GET("/api/languages", getLanguages)
 	router.GET("/api/faqs", getFAQs)

@@ -37,6 +37,10 @@ type FAQRepository interface {
 	AllFAQs() ([]FAQ, error)
 	FAQById(id int) (*FAQ, error)
 	SearchFAQs(language string, query string) ([]FAQ, error)
+	UpdateSearchIndex() error
+
+	CreateFAQ() (*FAQ, error)
+	SaveFAQText(faqID int, text *FAQText) error
 }
 
 type DB struct {
@@ -67,6 +71,18 @@ func (db *DB) SearchFAQs(language string, query string) ([]FAQ, error) {
 	return searchFAQs(db.DB, language, query)
 }
 
+func (db *DB) UpdateSearchIndex() error {
+	return updateSearchIndex(db.DB)
+}
+
+func (db *DB) CreateFAQ() (*FAQ, error) {
+	return createFAQ(db.DB)
+}
+
+func (db *DB) SaveFAQText(faqID int, text *FAQText) error {
+	return saveFAQText(db.DB, faqID, text)
+}
+
 type mockDB struct{}
 
 func (mdb *mockDB) AllFAQs() ([]FAQ, error) {
@@ -86,6 +102,18 @@ func (mdb *mockDB) FAQById(id int) (*FAQ, error) {
 
 func (mdb *mockDB) SearchFAQs(language string, query string) ([]FAQ, error) {
 	return mdb.AllFAQs()
+}
+
+func (mdb *mockDB) UpdateSearchIndex() error {
+	return nil
+}
+
+func (mdb *mockDB) CreateFAQ() (*FAQ, error) {
+	return mdb.FAQById(123)
+}
+
+func (mdb *mockDB) SaveFAQText(faqID int, text *FAQText) error {
+	return nil
 }
 
 ///// FAQRepository - End
@@ -745,15 +773,15 @@ func postAdminFAQsCreate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	loc := Locale{Code: form.localeCode}
 	text := FAQText{Question: form.question, Answer: form.answer, Locale: loc}
 
-	faq, err := createFAQ(dbConn)
-	updateSearchIndex(dbConn)
+	faq, err := faqRepository.CreateFAQ()
+	faqRepository.UpdateSearchIndex()
 	if err != nil {
 		http.Error(w, internalError, http.StatusInternalServerError)
 		return
 	}
 
-	err = saveFAQText(dbConn, faq.ID, &text)
-	updateSearchIndex(dbConn)
+	err = faqRepository.SaveFAQText(faq.ID, &text)
+	faqRepository.UpdateSearchIndex()
 	if err != nil {
 		http.Error(w, internalError, http.StatusInternalServerError)
 	} else {
