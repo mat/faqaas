@@ -996,17 +996,4 @@ func parseLocales(supportedLocales string) []language.Tag {
 	}
 
 	return supported
-
-	// var supported = []language.Tag{
-	// 	language.AmericanEnglish,    // en-US: first language is fallback
-	// 	language.German,             // de
-	// 	language.Dutch,              // nl
-	// 	language.Portuguese,         // pt (defaults to Brazilian)
-	// 	language.EuropeanPortuguese, // pt-pT
-	// 	language.Romanian,           // ro
-	// 	language.Serbian,            // sr (defaults to Cyrillic script)
-	// 	language.SerbianLatin,       // sr-Latn
-	// 	language.SimplifiedChinese,  // zh-Hans
-	// 	language.TraditionalChinese, // zh-Hant
-	// }
 }
