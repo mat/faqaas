@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-
-	"github.com/julienschmidt/httprouter"
 )
 
 // TODO https://stackoverflow.com/questions/25337126/testing-http-routes-in-golang#25585458
@@ -141,20 +139,7 @@ func doRequestWithHeader(method, uri string, body *bytes.Buffer, header *http.He
 		req.Header = *header
 	}
 
-	router := httprouter.New()
-	router.GET("/admin", getAdmin)
-	router.GET("/admin/faqs", getAdminFAQs)
-	router.GET("/admin/login", getAdminLogin)
-	router.POST("/admin/login", postAdminLogin)
-	router.GET("/admin/locales", getAdminLocales)
-	router.GET("/admin/faqs/new", getAdminFAQsNew)
-	router.GET("/admin/faqs/edit/:id", getAdminFAQsEdit)
-	router.POST("/admin/faqs/create", postAdminFAQsCreate)
-
-	router.GET("/api/languages", getLanguages)
-	router.GET("/api/faqs", getFAQs)
-	router.GET("/api/faqs/:id", getSingleFAQ)
-	router.GET("/api/search-faqs", getSearchFAQs)
+	router := buildRouter()
 	router.ServeHTTP(resp, req)
 	return resp
 }

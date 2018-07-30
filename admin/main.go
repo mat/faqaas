@@ -871,6 +871,20 @@ func main() {
 		log.Panic(err)
 	}
 
+	router := buildRouter()
+	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	addr := "0.0.0.0:" + port
+
+	loggedRouter := handlers.CombinedLoggingHandler(os.Stdout, router)
+	log.Fatal(http.ListenAndServe(addr, loggedRouter))
+}
+
+func buildRouter() *httprouter.Router {
 	router := httprouter.New()
 	router.GET("/", redirectToFAQs)
 	router.GET("/faqs/", redirectToFAQs)
@@ -894,19 +908,14 @@ func main() {
 	router.GET("/admin/login", httpsOnly(getAdminLogin))
 	router.POST("/admin/login", httpsOnly(postAdminLogin))
 
-	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-	addr := "0.0.0.0:" + port
-
-	loggedRouter := handlers.CombinedLoggingHandler(os.Stdout, router)
-	log.Fatal(http.ListenAndServe(addr, loggedRouter))
+	return router
 }
 
 func adminPassword(h httprouter.Handle) httprouter.Handle {
+	if os.Getenv("ADMIN_PASSWORD") == "no-admin-password-required" {
+		return h
+	}
+
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		if !loggedInAsAdmin(r) {
 			redirectToAdminLogin(w, r)
@@ -920,6 +929,10 @@ func adminPassword(h httprouter.Handle) httprouter.Handle {
 const apiKeyHeader = "Authorization"
 
 func requireAPIAuth(h httprouter.Handle) httprouter.Handle {
+	if os.Getenv("API_KEY") == "no-api-key-required" {
+		return h
+	}
+
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		authHeaderOK := r.Header.Get(apiKeyHeader) == apiKey
 		if !authHeaderOK {
