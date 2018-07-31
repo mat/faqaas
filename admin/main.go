@@ -891,22 +891,22 @@ func buildRouter() *httprouter.Router {
 	router.GET("/faqs/:locale", getFAQsHTML)
 	router.GET("/faq/:locale/:id", getSingleFAQHTML)
 
-	router.GET("/api/languages", httpsOnly(requireAPIAuth(getLanguages)))
-	router.GET("/api/categories", httpsOnly(requireAPIAuth(getCategories)))
-	router.GET("/api/faqs", httpsOnly(requireAPIAuth(getFAQs)))
-	router.GET("/api/faqs/:id", httpsOnly(requireAPIAuth(getSingleFAQ)))
-	router.GET("/api/search-faqs", httpsOnly(requireAPIAuth(getSearchFAQs)))
+	router.GET("/api/languages", requireHTTPS(requireAPIAuth(getLanguages)))
+	router.GET("/api/categories", requireHTTPS(requireAPIAuth(getCategories)))
+	router.GET("/api/faqs", requireHTTPS(requireAPIAuth(getFAQs)))
+	router.GET("/api/faqs/:id", requireHTTPS(requireAPIAuth(getSingleFAQ)))
+	router.GET("/api/search-faqs", requireHTTPS(requireAPIAuth(getSearchFAQs)))
 
-	router.GET("/admin", httpsOnly(adminPassword(getAdmin)))
-	router.GET("/admin/faqs", httpsOnly(adminPassword(getAdminFAQs)))
-	router.GET("/admin/locales", httpsOnly(adminPassword(getAdminLocales)))
-	router.GET("/admin/faqs/edit/:id", httpsOnly(adminPassword(getAdminFAQsEdit)))
-	router.GET("/admin/faqs/new", httpsOnly(adminPassword(getAdminFAQsNew)))
-	router.POST("/admin/faqs/update", httpsOnly(adminPassword(postAdminFAQsUpdate)))
-	router.POST("/admin/faqs/create", httpsOnly(adminPassword(postAdminFAQsCreate)))
-	router.POST("/admin/faqs/delete", httpsOnly(adminPassword(postAdminFAQsDelete)))
-	router.GET("/admin/login", httpsOnly(getAdminLogin))
-	router.POST("/admin/login", httpsOnly(postAdminLogin))
+	router.GET("/admin", requireHTTPS(adminPassword(getAdmin)))
+	router.GET("/admin/faqs", requireHTTPS(adminPassword(getAdminFAQs)))
+	router.GET("/admin/locales", requireHTTPS(adminPassword(getAdminLocales)))
+	router.GET("/admin/faqs/edit/:id", requireHTTPS(adminPassword(getAdminFAQsEdit)))
+	router.GET("/admin/faqs/new", requireHTTPS(adminPassword(getAdminFAQsNew)))
+	router.POST("/admin/faqs/update", requireHTTPS(adminPassword(postAdminFAQsUpdate)))
+	router.POST("/admin/faqs/create", requireHTTPS(adminPassword(postAdminFAQsCreate)))
+	router.POST("/admin/faqs/delete", requireHTTPS(adminPassword(postAdminFAQsDelete)))
+	router.GET("/admin/login", requireHTTPS(getAdminLogin))
+	router.POST("/admin/login", requireHTTPS(postAdminLogin))
 
 	return router
 }
@@ -948,7 +948,7 @@ func httpAllowed() bool {
 	return os.Getenv("HTTP_ALLOWED") == "true"
 }
 
-func httpsOnly(h httprouter.Handle) httprouter.Handle {
+func requireHTTPS(h httprouter.Handle) httprouter.Handle {
 	if httpAllowed() {
 		return h
 	}
