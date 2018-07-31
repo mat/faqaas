@@ -982,8 +982,8 @@ func init() {
 	if len(supportedLocales) == 0 {
 		panic("SUPPORTED_LOCALES missing or wrong")
 	}
+	languageMatcher = language.NewMatcher(parseLocales(locales))
 
-	languageMatcher = buildLanguageMatcher()
 	rand.Seed(time.Now().UnixNano())
 }
 
@@ -991,14 +991,7 @@ func getDefaultLocale() Locale {
 	return supportedLocales[0]
 }
 
-func buildLanguageMatcher() language.Matcher {
-	supportedLocales := parseLocales(os.Getenv("SUPPORTED_LOCALES"))
-	return language.NewMatcher(supportedLocales)
-}
-
-func parseLocales(supportedLocales string) []language.Tag {
-	locales := strings.Split(supportedLocales, ",")
-
+func parseLocales(locales []string) []language.Tag {
 	supported := []language.Tag{}
 	for _, loc := range locales {
 		tag, err := language.Parse(loc)
