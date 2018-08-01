@@ -470,7 +470,6 @@ func getSearchFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 	accept := r.Header.Get("Accept-Language")
 	langTag, _ := language.MatchStrings(languageMatcher, lang, accept)
-	fmt.Printf("lang %s matched %s\n", lang, langTag)
 
 	faqs, err := faqRepository.SearchFAQs(langTag.String(), query)
 	if err != nil {
