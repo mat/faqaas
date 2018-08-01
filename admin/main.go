@@ -142,11 +142,6 @@ func (l *Locale) IsDefaultLocale() bool {
 	return l.Code == getDefaultLocale().Code
 }
 
-type Category struct {
-	Code string `json:"code"`
-	// Name string `json:"name"`
-}
-
 type FAQ struct {
 	ID    int       `json:"id"`
 	Texts []FAQText `json:"texts"`
@@ -252,32 +247,6 @@ func updateFAQ(db *sql.DB, faq *FAQ) error {
 	// }
 	// return err
 	return nil
-}
-
-func getAllCategories(db *sql.DB) ([]Category, error) {
-	rows, err := db.Query("SELECT id, code FROM categories;")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	categories := []Category{}
-	for rows.Next() {
-		var id int
-		var code string
-		// var name string
-		err = rows.Scan(&id, &code)
-		if err != nil {
-			return nil, err
-		}
-		categories = append(categories, Category{Code: code})
-	}
-
-	err = rows.Err()
-	if err != nil {
-		return nil, err
-	}
-
-	return categories, nil
 }
 
 func getAllFAQs(db *sql.DB) ([]FAQ, error) {
@@ -411,16 +380,6 @@ func searchFAQs(db *sql.DB, lang string, query string) ([]FAQ, error) {
 
 const internalError = "internal error"
 
-func getCategories(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	categories, err := getAllCategories(dbConn)
-	if err != nil {
-		http.Error(w, internalError, http.StatusInternalServerError)
-		return
-	}
-
-	writeJSON(w, categories)
-}
-
 func writeJSON(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
@@ -478,19 +437,6 @@ func getSearchFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	writeJSON(w, faqs)
-}
-
-func createCategory(db *sql.DB) (*Category, error) {
-	category := Category{Code: "deadbeef"}
-
-	sqlStatement := `
-		INSERT INTO categories (code) VALUES ($1)`
-	_, err := db.Exec(sqlStatement, category.Code)
-	if err != nil {
-		fmt.Print("DB ERR:", err)
-	}
-
-	return &category, err
 }
 
 type FAQsPageData struct {
@@ -891,7 +837,6 @@ func buildRouter() *httprouter.Router {
 	router.GET("/faq/:locale/:id", getSingleFAQHTML)
 
 	router.GET("/api/languages", requireHTTPS(requireAPIAuth(getLanguages)))
-	router.GET("/api/categories", requireHTTPS(requireAPIAuth(getCategories)))
 	router.GET("/api/faqs", requireHTTPS(requireAPIAuth(getFAQs)))
 	router.GET("/api/faqs/:id", requireHTTPS(requireAPIAuth(getSingleFAQ)))
 	router.GET("/api/search-faqs", requireHTTPS(requireAPIAuth(getSearchFAQs)))
