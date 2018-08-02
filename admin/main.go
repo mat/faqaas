@@ -238,17 +238,6 @@ func deleteFAQ(db *sql.DB, faqID int) error {
 	return err
 }
 
-func updateFAQ(db *sql.DB, faq *FAQ) error {
-	// sqlStatement := `
-	// 	UPDATE faqs SET question=$1,answer=$2 WHERE id = $3`
-	// _, err := db.Exec(sqlStatement, faq.Question, faq.Answer, faq.ID)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// return err
-	return nil
-}
-
 func getAllFAQs(db *sql.DB) ([]FAQ, error) {
 	rows, err := db.Query("SELECT id FROM faqs ORDER BY id;")
 	if err != nil {
