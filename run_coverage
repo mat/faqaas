@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euxo pipefail
 
-export DATABASE_URL=postgres://postgres:@localhost/faqaas?sslmode=disable
+export DATABASE_URL=postgres://postgres:@localhost/faqaas_test?sslmode=disable
 export PORT=8080
 export SUPPORTED_LOCALES=en,de,fr,es,it,nl,pt,pt-BR,da,sv,no,ru,ar,zh
 export JWT_KEY=secret # openssl rand -hex 32
