@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -125,6 +126,19 @@ func TestGetAPISearchFAQ(t *testing.T) {
 	expectBodyContains(t, resp, `[{"id":123,"texts":null},{"id":456,"texts":null},{"id":789,"texts":null}]`)
 }
 
+func TestConnectAndGetAll(t *testing.T) {
+	repo, err := NewDB(os.Getenv("DATABASE_URL"))
+	expectNoError(t, err)
+
+	faqs, err := repo.AllFAQs()
+	expectNoError(t, err)
+	expectNoFAQs(t, faqs)
+
+	// _, err = repo.CreateFAQ()
+	// expectNoError(t, err)
+	// f.ID
+}
+
 func doRequest(method, uri string, body *bytes.Buffer) *httptest.ResponseRecorder {
 	return doRequestWithHeader(method, uri, body, nil)
 }
@@ -161,6 +175,18 @@ func expectHeader(t *testing.T, resp *httptest.ResponseRecorder, headerName stri
 	if resp.Header().Get(headerName) != expected {
 		t.Errorf("wrong header %v: is '%v' but wanted '%v'",
 			headerName, resp.Header().Get(headerName), expected)
+	}
+}
+
+func expectNoError(t *testing.T, e error) {
+	if e != nil {
+		t.Errorf("expected no error but got: %v", e)
+	}
+}
+
+func expectNoFAQs(t *testing.T, faqs []FAQ) {
+	if len(faqs) != 0 {
+		t.Errorf("expected empty slice but got: %v", faqs)
 	}
 }
 

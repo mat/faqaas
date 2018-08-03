@@ -6,3 +6,8 @@ go:
   - "1.10.2"
   - "1.10.3"
 script: make test
+services:
+  - postgresql
+before_script:
+  - psql -c 'create database faqaas_test;' -U postgres
+  - psql -U postgres -d faqaas_test -f schema.sql
