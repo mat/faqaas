@@ -129,14 +129,32 @@ func TestGetAPISearchFAQ(t *testing.T) {
 func TestConnectAndGetAll(t *testing.T) {
 	repo, err := NewDB(os.Getenv("DATABASE_URL"))
 	expectNoError(t, err)
+	repo.ClearDB()
+	repo.UpdateSearchIndex()
+
+	faqs, err := repo.AllFAQs()
+	expectNoError(t, err)
+	expectNoFAQs(t, faqs)
+}
+
+func TestSaveAndGet(t *testing.T) {
+	repo, err := NewDB(os.Getenv("DATABASE_URL"))
+	expectNoError(t, err)
+	repo.ClearDB()
+	repo.UpdateSearchIndex()
 
 	faqs, err := repo.AllFAQs()
 	expectNoError(t, err)
 	expectNoFAQs(t, faqs)
 
-	// _, err = repo.CreateFAQ()
-	// expectNoError(t, err)
-	// f.ID
+	f, err := repo.CreateFAQ()
+	expectNoError(t, err)
+	expectHasID(t, f.ID)
+	expectNoTexts(t, f.Texts)
+
+	f2, err := repo.FAQById(f.ID)
+	expectNoError(t, err)
+	expectSameID(t, f.ID, f2.ID)
 }
 
 func doRequest(method, uri string, body *bytes.Buffer) *httptest.ResponseRecorder {
@@ -184,9 +202,27 @@ func expectNoError(t *testing.T, e error) {
 	}
 }
 
+func expectHasID(t *testing.T, id int) {
+	if id <= 0 {
+		t.Errorf("expected id > 0 but got: %v", id)
+	}
+}
+
+func expectSameID(t *testing.T, id1 int, id2 int) {
+	if id1 != id2 {
+		t.Errorf("expected same ids, but got: id1=%v and id2=%v", id1, id2)
+	}
+}
+
 func expectNoFAQs(t *testing.T, faqs []FAQ) {
 	if len(faqs) != 0 {
 		t.Errorf("expected empty slice but got: %v", faqs)
+	}
+}
+
+func expectNoTexts(t *testing.T, texts []FAQText) {
+	if len(texts) != 0 {
+		t.Errorf("expected empty slice but got: %v", texts)
 	}
 }
 

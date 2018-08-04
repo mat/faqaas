@@ -41,6 +41,8 @@ type FAQRepository interface {
 
 	CreateFAQ() (*FAQ, error)
 	SaveFAQText(faqID int, text *FAQText) error
+
+	ClearDB() error
 }
 
 type DB struct {
@@ -83,6 +85,19 @@ func (db *DB) SaveFAQText(faqID int, text *FAQText) error {
 	return saveFAQText(db.DB, faqID, text)
 }
 
+func (db *DB) ClearDB() error {
+	_, err := db.Exec("DELETE FROM faq_texts;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DELETE FROM faqs;")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type mockDB struct{}
 
 func (mdb *mockDB) AllFAQs() ([]FAQ, error) {
@@ -113,6 +128,10 @@ func (mdb *mockDB) CreateFAQ() (*FAQ, error) {
 }
 
 func (mdb *mockDB) SaveFAQText(faqID int, text *FAQText) error {
+	return nil
+}
+
+func (mdb *mockDB) ClearDB() error {
 	return nil
 }
 
