@@ -152,9 +152,17 @@ func TestSaveAndGet(t *testing.T) {
 	expectHasID(t, f.ID)
 	expectNoTexts(t, f.Texts)
 
+	txt := FAQText{Question: "question", Answer: "answer", Locale: Locale{Code: "en"}}
+	err = repo.SaveFAQText(f.ID, &txt)
+	expectNoError(t, err)
+
 	f2, err := repo.FAQById(f.ID)
 	expectNoError(t, err)
 	expectSameID(t, f.ID, f2.ID)
+	txt2 := f2.Texts[0]
+	expectSameString(t, "en", txt2.Locale.Code)
+	expectSameString(t, "question", txt2.Question)
+	expectSameString(t, "answer", txt2.Answer)
 }
 
 func doRequest(method, uri string, body *bytes.Buffer) *httptest.ResponseRecorder {
@@ -211,6 +219,12 @@ func expectHasID(t *testing.T, id int) {
 func expectSameID(t *testing.T, id1 int, id2 int) {
 	if id1 != id2 {
 		t.Errorf("expected same ids, but got: id1=%v and id2=%v", id1, id2)
+	}
+}
+
+func expectSameString(t *testing.T, str1 string, str2 string) {
+	if str1 != str2 {
+		t.Errorf("expected same strings, but got: str1=%v and str2=%v", str1, str2)
 	}
 }
 
