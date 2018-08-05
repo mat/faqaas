@@ -229,9 +229,6 @@ func saveFAQText(db *sql.DB, faqID int, text *FAQText) error {
 		   answer = EXCLUDED.answer;
 		`
 	_, err := db.Exec(sqlStatement, faqID, text.Locale.Code, text.Question, text.Answer)
-	if err != nil {
-		fmt.Print("DB ERR:", err)
-	}
 	return err
 }
 
