@@ -42,6 +42,7 @@ type FAQRepository interface {
 	CreateFAQ() (*FAQ, error)
 	SaveFAQText(faqID int, text *FAQText) error
 
+	DeleteFAQ(faqID int) error
 	ClearDB() error
 }
 
@@ -82,7 +83,13 @@ func (db *DB) CreateFAQ() (*FAQ, error) {
 }
 
 func (db *DB) SaveFAQText(faqID int, text *FAQText) error {
-	return saveFAQText(db.DB, faqID, text)
+	err := saveFAQText(db.DB, faqID, text)
+	updateSearchIndex(db.DB)
+	return err
+}
+
+func (db *DB) DeleteFAQ(faqID int) error {
+	return deleteFAQ(db.DB, faqID)
 }
 
 func (db *DB) ClearDB() error {
@@ -128,6 +135,10 @@ func (mdb *mockDB) CreateFAQ() (*FAQ, error) {
 }
 
 func (mdb *mockDB) SaveFAQText(faqID int, text *FAQText) error {
+	return nil
+}
+
+func (mdb *mockDB) DeleteFAQ(faqID int) error {
 	return nil
 }
 

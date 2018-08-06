@@ -127,10 +127,7 @@ func TestGetAPISearchFAQ(t *testing.T) {
 }
 
 func TestConnectAndGetAll(t *testing.T) {
-	repo, err := NewDB(os.Getenv("DATABASE_URL"))
-	expectNoError(t, err)
-	repo.ClearDB()
-	repo.UpdateSearchIndex()
+	repo := prepareDB()
 
 	faqs, err := repo.AllFAQs()
 	expectNoError(t, err)
@@ -138,10 +135,7 @@ func TestConnectAndGetAll(t *testing.T) {
 }
 
 func TestSaveAndGet(t *testing.T) {
-	repo, err := NewDB(os.Getenv("DATABASE_URL"))
-	expectNoError(t, err)
-	repo.ClearDB()
-	repo.UpdateSearchIndex()
+	repo := prepareDB()
 
 	faqs, err := repo.AllFAQs()
 	expectNoError(t, err)
@@ -163,6 +157,64 @@ func TestSaveAndGet(t *testing.T) {
 	expectSameString(t, "en", txt2.Locale.Code)
 	expectSameString(t, "question", txt2.Question)
 	expectSameString(t, "answer", txt2.Answer)
+}
+
+func TestSaveAndDelete(t *testing.T) {
+	repo := prepareDB()
+
+	f, err := repo.CreateFAQ()
+	expectNoError(t, err)
+	expectHasID(t, f.ID)
+	expectNoTexts(t, f.Texts)
+
+	txt := FAQText{Question: "question", Answer: "answer", Locale: Locale{Code: "en"}}
+	err = repo.SaveFAQText(f.ID, &txt)
+	expectNoError(t, err)
+
+	err = repo.DeleteFAQ(f.ID)
+	expectNoError(t, err)
+
+	f2, err := repo.FAQById(f.ID)
+	expectNoError(t, err)
+	expectSameID(t, f.ID, f2.ID)
+	expectNoTexts(t, f.Texts)
+}
+
+func TestSimpleSearch(t *testing.T) {
+	repo := prepareDB()
+
+	f, err := repo.CreateFAQ()
+	expectNoError(t, err)
+	expectHasID(t, f.ID)
+	expectNoTexts(t, f.Texts)
+
+	txt := FAQText{Question: "question", Answer: "answer", Locale: Locale{Code: "en"}}
+	err = repo.SaveFAQText(f.ID, &txt)
+	expectNoError(t, err)
+
+	// Failed search
+	faqs, err := repo.SearchFAQs("de", "foobar")
+	expectNoError(t, err)
+	expectNoFAQs(t, faqs)
+
+	// Successful search
+	faqs, err = repo.SearchFAQs("en", "answer")
+	expectNoError(t, err)
+
+	t2 := faqs[0].Texts[0]
+	expectSameString(t, "en", t2.Locale.Code)
+	expectSameString(t, "question", t2.Question)
+	expectSameString(t, "answer", t2.Answer)
+}
+
+func prepareDB() *DB {
+	repo, err := NewDB(os.Getenv("DATABASE_URL"))
+	if err != nil {
+		panic(err)
+	}
+	repo.ClearDB()
+	repo.UpdateSearchIndex()
+	return repo
 }
 
 func doRequest(method, uri string, body *bytes.Buffer) *httptest.ResponseRecorder {
