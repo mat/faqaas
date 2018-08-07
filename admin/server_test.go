@@ -90,6 +90,32 @@ func TestPostAdminFAQsCreate(t *testing.T) {
 	expectHeader(t, resp, "Location", "/admin/faqs/edit/123")
 }
 
+func TestPostAdminFAQsUpdate(t *testing.T) {
+	faqRepository = &mockDB{}
+	body := body("faqID=111&localeCode=fr&question=questionFr&answer=answerFr")
+	isAdminFunc = alwaysAdminFunc
+	header := http.Header{}
+	header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp := doRequestWithHeader("POST", "/admin/faqs/update", body, &header)
+
+	expectStatus(t, resp, 302)
+	expectHeader(t, resp, "Location", "/admin/faqs/edit/111")
+}
+
+func TestPostAdminFAQsDelete(t *testing.T) {
+	faqRepository = &mockDB{}
+	isAdminFunc = alwaysAdminFunc
+
+	body := body("faqID=333")
+	header := http.Header{}
+	header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp := doRequestWithHeader("POST", "/admin/faqs/delete", body, &header)
+
+	expectStatus(t, resp, 302)
+	expectHeader(t, resp, "Location", "/admin/faqs")
+}
+
 func TestGetAPILanguages(t *testing.T) {
 	faqRepository = &mockDB{}
 	resp := doRequest("GET", "/api/languages", emptyBody())
@@ -178,6 +204,33 @@ func TestSaveAndDelete(t *testing.T) {
 	expectNoError(t, err)
 	expectSameID(t, f.ID, f2.ID)
 	expectNoTexts(t, f.Texts)
+}
+
+func TestSaveAndGetAll(t *testing.T) {
+	repo := prepareDB()
+
+	faqs, err := repo.AllFAQs()
+	expectNoError(t, err)
+	expectNoFAQs(t, faqs)
+
+	f, err := repo.CreateFAQ()
+	expectNoError(t, err)
+	expectHasID(t, f.ID)
+	expectNoTexts(t, f.Texts)
+
+	txtEn := FAQText{Question: "question", Answer: "answer", Locale: Locale{Code: "en"}}
+	err = repo.SaveFAQText(f.ID, &txtEn)
+	expectNoError(t, err)
+
+	txtDe := FAQText{Question: "frage", Answer: "antwort", Locale: Locale{Code: "de"}}
+	err = repo.SaveFAQText(f.ID, &txtDe)
+	expectNoError(t, err)
+
+	faqs, err = repo.AllFAQs()
+	expectNoError(t, err)
+
+	f2 := faqs[0]
+	expectSameInt(t, 2, len(f2.Texts))
 }
 
 func TestSimpleSearch(t *testing.T) {
@@ -271,6 +324,12 @@ func expectHasID(t *testing.T, id int) {
 func expectSameID(t *testing.T, id1 int, id2 int) {
 	if id1 != id2 {
 		t.Errorf("expected same ids, but got: id1=%v and id2=%v", id1, id2)
+	}
+}
+
+func expectSameInt(t *testing.T, i1 int, i2 int) {
+	if i1 != i2 {
+		t.Errorf("expected same ints, but got: i1=%v and i2=%v", i1, i2)
 	}
 }
 

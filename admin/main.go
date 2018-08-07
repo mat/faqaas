@@ -695,8 +695,8 @@ func postAdminFAQsUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		panic(err)
 	}
 
-	err = saveFAQText(dbConn, faqID, &text)
-	updateSearchIndex(dbConn)
+	err = faqRepository.SaveFAQText(faqID, &text)
+	faqRepository.UpdateSearchIndex()
 	if err != nil {
 		http.Error(w, internalError, http.StatusInternalServerError)
 	} else {
@@ -715,8 +715,8 @@ func postAdminFAQsDelete(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		panic(err)
 	}
 
-	err = deleteFAQ(dbConn, faqID)
-	updateSearchIndex(dbConn)
+	err = faqRepository.DeleteFAQ(faqID)
+	faqRepository.UpdateSearchIndex()
 	if err != nil {
 		http.Error(w, internalError, http.StatusInternalServerError)
 	} else {
