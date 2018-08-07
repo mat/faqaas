@@ -12,6 +12,20 @@ import (
 
 // TODO https://stackoverflow.com/questions/25337126/testing-http-routes-in-golang#25585458
 
+func TestGetRoot(t *testing.T) {
+	resp := doRequest("GET", "/", emptyBody())
+
+	expectStatus(t, resp, 302)
+	expectHeader(t, resp, "Location", "/faqs/en")
+}
+func TestGetSingleFAQHTML(t *testing.T) {
+	resp := doRequest("GET", "/faq/en/this-is-a-question-1234", emptyBody())
+
+	expectStatus(t, resp, 200)
+	expectBodyContains(t, resp, `locale=en`)
+	expectBodyContains(t, resp, `id=1234`)
+}
+
 func TestGetAdminIndex(t *testing.T) {
 	resp := doRequest("GET", "/admin", emptyBody())
 
