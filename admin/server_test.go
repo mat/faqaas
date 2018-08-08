@@ -19,6 +19,13 @@ func TestGetRoot(t *testing.T) {
 	expectStatus(t, resp, 302)
 	expectHeader(t, resp, "Location", "/faqs/en")
 }
+
+func TestGetFAQsHTML(t *testing.T) {
+	resp := doRequest("GET", "/faqs/en", emptyBody())
+
+	expectStatus(t, resp, 200)
+	expectBodyContains(t, resp, `locale=en`)
+}
 func TestGetSingleFAQHTML(t *testing.T) {
 	resp := doRequest("GET", "/faq/en/this-is-a-question-1234", emptyBody())
 

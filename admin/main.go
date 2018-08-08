@@ -212,7 +212,7 @@ func redirectToFAQs(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 
 func getFAQsHTML(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	fmt.Fprint(w, "Welcome!\n")
-	fmt.Fprint(w, p.ByName("locale"))
+	fmt.Fprint(w, "locale=", p.ByName("locale"))
 }
 
 func getSingleFAQHTML(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
