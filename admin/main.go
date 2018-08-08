@@ -108,8 +108,12 @@ func (db *DB) ClearDB() error {
 type mockDB struct{}
 
 func (mdb *mockDB) AllFAQs() ([]FAQ, error) {
+	texts := make([]FAQText, 0)
+	texts = append(texts, FAQText{Locale: Locale{Code: "en"}, Question: "question?", Answer: "answer!"})
+	texts = append(texts, FAQText{Locale: Locale{Code: "de"}, Question: "Frage?", Answer: "Antwort!"})
+
 	faqs := make([]FAQ, 0)
-	faqs = append(faqs, FAQ{ID: 123})
+	faqs = append(faqs, FAQ{ID: 123, Texts: texts})
 	faqs = append(faqs, FAQ{ID: 456})
 	faqs = append(faqs, FAQ{ID: 789})
 	return faqs, nil
@@ -314,9 +318,9 @@ func getTextForFAQ(db *sql.DB, faqID int) ([]FAQText, error) {
 		if err != nil {
 			return nil, err
 		}
-		l := Locale{Code: localeCode}
-		t := FAQText{Locale: l, Question: question, Answer: answer}
-		texts = append(texts, t)
+		texts = append(texts, FAQText{
+			Locale:   Locale{Code: localeCode},
+			Question: question, Answer: answer})
 	}
 
 	err = rows.Err()
@@ -334,22 +338,9 @@ func getFAQ(db *sql.DB, id int) (*FAQ, error) {
 	}
 	defer rows.Close()
 	faq := FAQ{ID: id}
-	faq.Texts = []FAQText{}
-	for rows.Next() {
-		var locale string
-		var question string
-		var answer string
-		err = rows.Scan(&locale, &question, &answer)
-		if err != nil {
-			return nil, err
-		}
-		loc := Locale{Code: locale}
-		faq.Texts = append(faq.Texts, FAQText{Locale: loc, Question: question, Answer: answer})
-	}
-
-	err = rows.Err()
+	faq.Texts, err = getTextForFAQ(db, id)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	return &faq, nil
@@ -416,7 +407,8 @@ func getSingleFAQ(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	idStr := ps.ByName("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		panic(err)
+		http.Error(w, "faq not found", http.StatusNotFound)
+		return
 	}
 
 	faq, err := faqRepository.FAQById(id)
@@ -519,14 +511,14 @@ func createJWT(expiry time.Time) string {
 		panic(err)
 	}
 
-	cl := jwt.Claims{
+	claims := jwt.Claims{
 		Subject: "admin",
 		// Issuer:    "issuer",
 		// NotBefore: jwt.NewNumericDate(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)),
 		Expiry: jwt.NewNumericDate(expiry),
 		// Audience:  jwt.Audience{"leela", "fry"},
 	}
-	raw, err := jwt.Signed(sig).Claims(cl).CompactSerialize()
+	raw, err := jwt.Signed(sig).Claims(claims).CompactSerialize()
 	if err != nil {
 		panic(err)
 	}
@@ -560,8 +552,8 @@ const (
 	leeway = 1.0 * time.Minute
 )
 
-func validateJWT(rawToken string) bool {
-	tok, err := jwt.ParseSigned(rawToken)
+func isValidAdminJWT(rawJWTToken string) bool {
+	tok, err := jwt.ParseSigned(rawJWTToken)
 	if err != nil {
 		return false
 	}
@@ -595,8 +587,7 @@ func loggedInAsAdmin(r *http.Request) bool {
 		return false
 	}
 
-	isValid := validateJWT(authCookie.Value)
-	return isValid
+	return isValidAdminJWT(authCookie.Value)
 }
 
 func redirectToAdminLogin(w http.ResponseWriter, r *http.Request) {

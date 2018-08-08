@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 // TODO https://stackoverflow.com/questions/25337126/testing-http-routes-in-golang#25585458
@@ -60,7 +61,11 @@ func TestGetAdminFAQs(t *testing.T) {
 
 	expectStatus(t, resp, 200)
 	expectBodyContains(t, resp, `<title>Admin / FAQs</title>`)
+
 	expectBodyContains(t, resp, `href="/admin/faqs/edit/123"`)
+	expectBodyContains(t, resp, `<td>123</td>`)
+	expectBodyContains(t, resp, `<td>question?</td>`)
+
 	expectBodyContains(t, resp, `href="/admin/faqs/edit/456"`)
 	expectBodyContains(t, resp, `href="/admin/faqs/edit/789"`)
 }
@@ -145,25 +150,36 @@ func TestGetAPIFAQs(t *testing.T) {
 
 	expectStatus(t, resp, 200)
 	expectHeader(t, resp, "Content-Type", "application/json")
-	expectBodyContains(t, resp, `[{"id":123,"texts":null},{"id":456,"texts":null},{"id":789,"texts":null}]`)
+	expectBodyContains(t, resp, `[{"id":123,"texts":[{"locale":{"code":"en"},"question":"question?","answer":"answer!"},{"locale":{"code":"de"},"question":"Frage?","answer":"Antwort!"}]},{"id":456,"texts":null},{"id":789,"texts":null}]`)
 }
 
 func TestGetAPISingleFAQ(t *testing.T) {
 	faqRepository = &mockDB{}
-	resp := doRequest("GET", "/api/faqs/123", emptyBody())
 
+	resp := doRequest("GET", "/api/faqs/not-a-valid-id", emptyBody())
+	expectStatus(t, resp, 404)
+	expectBodyContains(t, resp, `faq not found`)
+
+	resp = doRequest("GET", "/api/faqs/123", emptyBody())
 	expectStatus(t, resp, 200)
 	expectHeader(t, resp, "Content-Type", "application/json")
 	expectBodyContains(t, resp, `{"id":123,"texts":[{"locale":{"code":"de"},"question":"Welcher Tag ist heute?","answer":"Freitag"}]}`)
 }
 
 func TestGetAPISearchFAQ(t *testing.T) {
-	faqRepository = &mockDB{}
-	resp := doRequest("GET", "/api/search-faqs?lang=en&query=bar", emptyBody())
+	resp := doRequest("GET", "/api/search-faqs?query=bar", emptyBody())
+	expectStatus(t, resp, 400)
+	expectBodyContains(t, resp, `lang param empty`)
 
+	resp = doRequest("GET", "/api/search-faqs?lang=en", emptyBody())
+	expectStatus(t, resp, 400)
+	expectBodyContains(t, resp, `query param empty`)
+
+	faqRepository = &mockDB{}
+	resp = doRequest("GET", "/api/search-faqs?lang=en&query=bar", emptyBody())
 	expectStatus(t, resp, 200)
 	expectHeader(t, resp, "Content-Type", "application/json")
-	expectBodyContains(t, resp, `[{"id":123,"texts":null},{"id":456,"texts":null},{"id":789,"texts":null}]`)
+	expectBodyContains(t, resp, `[{"id":123,"texts":[{"locale":{"code":"en"},"question":"question?","answer":"answer!"},{"locale":{"code":"de"},"question":"Frage?","answer":"Antwort!"}]},{"id":456,"texts":null},{"id":789,"texts":null}]`)
 }
 
 func TestConnectAndGetAll(t *testing.T) {
@@ -274,6 +290,13 @@ func TestSimpleSearch(t *testing.T) {
 	expectSameString(t, "answer", t2.Answer)
 }
 
+func TestCreateAndCheckAdminJWT(t *testing.T) {
+	expires := time.Now().Add(adminSessionDuration)
+	jwtToken := createJWT(expires)
+	isValid := isValidAdminJWT(jwtToken)
+	expectIsTrue(t, isValid)
+}
+
 func prepareDB() *DB {
 	repo, err := NewDB(os.Getenv("DATABASE_URL"))
 	if err != nil {
@@ -326,6 +349,12 @@ func expectHeader(t *testing.T, resp *httptest.ResponseRecorder, headerName stri
 func expectNoError(t *testing.T, e error) {
 	if e != nil {
 		t.Errorf("expected no error but got: %v", e)
+	}
+}
+
+func expectIsTrue(t *testing.T, b bool) {
+	if b != true {
+		t.Errorf("expected b==true but was false")
 	}
 }
 
