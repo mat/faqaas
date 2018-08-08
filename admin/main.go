@@ -252,7 +252,7 @@ func createFAQ(db *sql.DB) (*FAQ, error) {
 	faq := FAQ{}
 	err := db.QueryRow(sqlStatement).Scan(&faq.ID)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	return &faq, nil
 }
@@ -340,9 +340,8 @@ func getFAQ(db *sql.DB, id int) (*FAQ, error) {
 	faq := FAQ{ID: id}
 	faq.Texts, err = getTextForFAQ(db, id)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-
 	return &faq, nil
 }
 
@@ -413,7 +412,8 @@ func getSingleFAQ(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 
 	faq, err := faqRepository.FAQById(id)
 	if err != nil {
-		panic(err)
+		http.Error(w, internalError, http.StatusInternalServerError)
+		return
 	}
 
 	if len(faq.Texts) == 0 {
