@@ -160,6 +160,15 @@ func TestGetAPIFAQs(t *testing.T) {
 	expectBodyContains(t, resp, `[{"id":123,"texts":[{"locale":{"code":"en"},"question":"question?","answer":"answer!"},{"locale":{"code":"de"},"question":"Frage?","answer":"Antwort!"}]},{"id":456,"texts":null},{"id":789,"texts":null}]`)
 }
 
+func TestGetAPIFAQsWithBrokenDB(t *testing.T) {
+	faqRepository = &brokenDB{}
+	resp := doRequest("GET", "/api/faqs", emptyBody())
+
+	expectStatus(t, resp, 500)
+	// expectHeader(t, resp, "Content-Type", "application/json")
+	expectBodyContains(t, resp, `internal error`)
+}
+
 func TestGetAPISingleFAQ(t *testing.T) {
 	faqRepository = &mockDB{}
 
@@ -187,6 +196,13 @@ func TestGetAPISearchFAQ(t *testing.T) {
 	expectStatus(t, resp, 200)
 	expectHeader(t, resp, "Content-Type", "application/json")
 	expectBodyContains(t, resp, `[{"id":123,"texts":[{"locale":{"code":"en"},"question":"question?","answer":"answer!"},{"locale":{"code":"de"},"question":"Frage?","answer":"Antwort!"}]},{"id":456,"texts":null},{"id":789,"texts":null}]`)
+}
+
+func TestGetAPISearchFAQWithBrokenDB(t *testing.T) {
+	faqRepository = &brokenDB{}
+	resp := doRequest("GET", "/api/search-faqs?lang=en&query=bar", emptyBody())
+	expectStatus(t, resp, 500)
+	expectBodyContains(t, resp, `internal error`)
 }
 
 func TestConnectAndGetAll(t *testing.T) {

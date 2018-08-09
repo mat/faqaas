@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -148,6 +149,43 @@ func (mdb *mockDB) DeleteFAQ(faqID int) error {
 
 func (mdb *mockDB) ClearDB() error {
 	return nil
+}
+
+const someDBError = "some DB error"
+
+type brokenDB struct {
+}
+
+func (mdb *brokenDB) AllFAQs() ([]FAQ, error) {
+	return nil, errors.New(someDBError)
+}
+
+func (mdb *brokenDB) FAQById(id int) (*FAQ, error) {
+	return nil, errors.New(someDBError)
+}
+
+func (mdb *brokenDB) SearchFAQs(language string, query string) ([]FAQ, error) {
+	return nil, errors.New(someDBError)
+}
+
+func (mdb *brokenDB) UpdateSearchIndex() error {
+	return errors.New(someDBError)
+}
+
+func (mdb *brokenDB) CreateFAQ() (*FAQ, error) {
+	return nil, errors.New(someDBError)
+}
+
+func (mdb *brokenDB) SaveFAQText(faqID int, text *FAQText) error {
+	return errors.New(someDBError)
+}
+
+func (mdb *brokenDB) DeleteFAQ(faqID int) error {
+	return errors.New(someDBError)
+}
+
+func (mdb *brokenDB) ClearDB() error {
+	return errors.New(someDBError)
 }
 
 ///// FAQRepository - End
