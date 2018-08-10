@@ -32,6 +32,11 @@ func TestGetSingleFAQHTML(t *testing.T) {
 	expectStatus(t, resp, 200)
 	expectBodyContains(t, resp, `locale=en`)
 	expectBodyContains(t, resp, `id=1234`)
+
+	resp = doRequest("GET", "/faq/en/this-is-a-question-12broken34", emptyBody())
+	expectStatus(t, resp, 200)
+	expectBodyContains(t, resp, `locale=en`)
+	expectBodyContains(t, resp, `id=0`)
 }
 
 func TestGetAdminIndex(t *testing.T) {
@@ -60,6 +65,15 @@ func TestPostAdminLogin(t *testing.T) {
 	expectStatus(t, resp, 302)
 	expectHeader(t, resp, "Location", "/admin/faqs")
 	expectHeaderMatches(t, resp, "Set-Cookie", "^Authorization.*Path=/admin.*HttpOnly$")
+}
+
+func TestPostAdminLoginWrongPassword(t *testing.T) {
+	isAdminFunc = func(string, string) bool { return false }
+	resp := doRequest("POST", "/admin/login", emptyBody())
+
+	expectStatus(t, resp, 302)
+	expectHeader(t, resp, "Location", "/admin/login")
+	expectEmptyHeader(t, resp, "Set-Cookie")
 }
 
 func TestGetAdminFAQs(t *testing.T) {
@@ -176,10 +190,16 @@ func TestGetAPISingleFAQ(t *testing.T) {
 	expectStatus(t, resp, 404)
 	expectBodyContains(t, resp, `faq not found`)
 
+	// FAQ, but no texts
+	resp = doRequest("GET", "/api/faqs/456", emptyBody())
+	expectStatus(t, resp, 404)
+	// expectHeader(t, resp, "Content-Type", "application/json")
+	expectBodyContains(t, resp, `faq not found`)
+
 	resp = doRequest("GET", "/api/faqs/123", emptyBody())
 	expectStatus(t, resp, 200)
 	expectHeader(t, resp, "Content-Type", "application/json")
-	expectBodyContains(t, resp, `{"id":123,"texts":[{"locale":{"code":"de"},"question":"Welcher Tag ist heute?","answer":"Freitag"}]}`)
+	expectBodyContains(t, resp, `{"id":123,"texts":[{"locale":{"code":"en"},"question":"question?","answer":"answer!"},{"locale":{"code":"de"},"question":"Frage?","answer":"Antwort!"}]}`)
 }
 
 func TestGetAPISearchFAQ(t *testing.T) {
@@ -416,7 +436,13 @@ func expectNoTexts(t *testing.T, texts []FAQText) {
 		t.Errorf("expected empty slice but got: %v", texts)
 	}
 }
-
+func expectEmptyHeader(t *testing.T, resp *httptest.ResponseRecorder, headerName string) {
+	actualHeaderValue := resp.Header().Get(headerName)
+	if len(actualHeaderValue) > 0 {
+		t.Errorf("expected empty header for %v, but found '%v'",
+			headerName, actualHeaderValue)
+	}
+}
 func expectHeaderMatches(t *testing.T, resp *httptest.ResponseRecorder, headerName string, expectedRegexp string) {
 	var regex = regexp.MustCompile(expectedRegexp)
 	actualHeaderValue := resp.Header().Get(headerName)

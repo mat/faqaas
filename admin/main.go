@@ -121,10 +121,13 @@ func (mdb *mockDB) AllFAQs() ([]FAQ, error) {
 }
 
 func (mdb *mockDB) FAQById(id int) (*FAQ, error) {
-	texts := make([]FAQText, 0)
-	texts = append(texts, FAQText{Locale: Locale{Code: "de"}, Question: "Welcher Tag ist heute?", Answer: "Freitag"})
-	f := FAQ{ID: id, Texts: texts}
-	return &f, nil
+	faqs, _ := mdb.AllFAQs()
+	for _, f := range faqs {
+		if f.ID == id {
+			return &f, nil
+		}
+	}
+	return nil, errors.New("faq not found")
 }
 
 func (mdb *mockDB) SearchFAQs(language string, query string) ([]FAQ, error) {
@@ -261,10 +264,7 @@ func getSingleFAQHTML(w http.ResponseWriter, r *http.Request, p httprouter.Param
 	idPart := p.ByName("id")
 	parts := strings.Split(idPart, "-")
 	lastPart := parts[len(parts)-1]
-	id, err := strconv.Atoi(lastPart)
-	if err != nil {
-		panic(err)
-	}
+	id, _ := strconv.Atoi(lastPart)
 	fmt.Fprint(w, "id=", id, "\n")
 }
 
