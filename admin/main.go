@@ -430,10 +430,15 @@ func writeJSON(w http.ResponseWriter, data interface{}) {
 	enc.Encode(data)
 }
 
+func writeJSONErr(w http.ResponseWriter, statusCode int, errorText string) {
+	w.WriteHeader(statusCode)
+	writeJSON(w, Error{Error: errorText})
+}
+
 func getFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	faqs, err := faqRepository.AllFAQs()
 	if err != nil {
-		http.Error(w, internalError, http.StatusInternalServerError)
+		writeJSONErr(w, http.StatusInternalServerError, internalError)
 		return
 	}
 
@@ -444,7 +449,9 @@ func getSingleFAQ(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	idStr := ps.ByName("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "faq not found", http.StatusNotFound)
+		w.WriteHeader(http.StatusNotFound)
+		writeJSON(w, Error{Error: "faq not found"})
+		// http.Error(w, "faq not found", http.StatusNotFound)
 		return
 	}
 
@@ -455,7 +462,7 @@ func getSingleFAQ(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	}
 
 	if len(faq.Texts) == 0 {
-		http.Error(w, "faq not found", http.StatusNotFound)
+		writeJSONErr(w, http.StatusNotFound, "faq not found")
 		return
 	}
 
@@ -465,12 +472,12 @@ func getSingleFAQ(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 func getSearchFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	query := strings.TrimSpace(r.FormValue("query"))
 	if len(query) == 0 {
-		http.Error(w, "query param empty", http.StatusBadRequest)
+		writeJSONErr(w, http.StatusBadRequest, "query param empty")
 		return
 	}
 	lang := strings.TrimSpace(r.FormValue("lang"))
 	if len(lang) == 0 {
-		http.Error(w, "lang param empty", http.StatusBadRequest)
+		writeJSONErr(w, http.StatusBadRequest, "lang param empty")
 		return
 	}
 	accept := r.Header.Get("Accept-Language")
@@ -478,7 +485,7 @@ func getSearchFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	faqs, err := faqRepository.SearchFAQs(langTag.String(), query)
 	if err != nil {
-		http.Error(w, internalError, http.StatusInternalServerError)
+		writeJSONErr(w, http.StatusInternalServerError, internalError)
 		return
 	}
 

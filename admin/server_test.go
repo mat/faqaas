@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -177,24 +178,18 @@ func TestGetAPIFAQs(t *testing.T) {
 func TestGetAPIFAQsWithBrokenDB(t *testing.T) {
 	faqRepository = &brokenDB{}
 	resp := doRequest("GET", "/api/faqs", emptyBody())
-
-	expectStatus(t, resp, 500)
-	// expectHeader(t, resp, "Content-Type", "application/json")
-	expectBodyContains(t, resp, `internal error`)
+	expectErrorJSON(t, resp, 500, "internal error")
 }
 
 func TestGetAPISingleFAQ(t *testing.T) {
 	faqRepository = &mockDB{}
 
 	resp := doRequest("GET", "/api/faqs/not-a-valid-id", emptyBody())
-	expectStatus(t, resp, 404)
-	expectBodyContains(t, resp, `faq not found`)
+	expectErrorJSON(t, resp, 404, "faq not found")
 
 	// FAQ, but no texts
 	resp = doRequest("GET", "/api/faqs/456", emptyBody())
-	expectStatus(t, resp, 404)
-	// expectHeader(t, resp, "Content-Type", "application/json")
-	expectBodyContains(t, resp, `faq not found`)
+	expectErrorJSON(t, resp, 404, "faq not found")
 
 	resp = doRequest("GET", "/api/faqs/123", emptyBody())
 	expectStatus(t, resp, 200)
@@ -204,12 +199,10 @@ func TestGetAPISingleFAQ(t *testing.T) {
 
 func TestGetAPISearchFAQ(t *testing.T) {
 	resp := doRequest("GET", "/api/search-faqs?query=bar", emptyBody())
-	expectStatus(t, resp, 400)
-	expectBodyContains(t, resp, `lang param empty`)
+	expectErrorJSON(t, resp, 400, "lang param empty")
 
 	resp = doRequest("GET", "/api/search-faqs?lang=en", emptyBody())
-	expectStatus(t, resp, 400)
-	expectBodyContains(t, resp, `query param empty`)
+	expectErrorJSON(t, resp, 400, "query param empty")
 
 	faqRepository = &mockDB{}
 	resp = doRequest("GET", "/api/search-faqs?lang=en&query=bar", emptyBody())
@@ -221,8 +214,7 @@ func TestGetAPISearchFAQ(t *testing.T) {
 func TestGetAPISearchFAQWithBrokenDB(t *testing.T) {
 	faqRepository = &brokenDB{}
 	resp := doRequest("GET", "/api/search-faqs?lang=en&query=bar", emptyBody())
-	expectStatus(t, resp, 500)
-	expectBodyContains(t, resp, `internal error`)
+	expectErrorJSON(t, resp, 500, "internal error")
 }
 
 func TestConnectAndGetAll(t *testing.T) {
@@ -373,6 +365,13 @@ func expectStatus(t *testing.T, resp *httptest.ResponseRecorder, expected int) {
 	if status := resp.Code; status != expected {
 		t.Errorf("wrong status code: is %v but wanted %v", status, expected)
 	}
+}
+
+func expectErrorJSON(t *testing.T, resp *httptest.ResponseRecorder, expectedStatusCode int, expectedErrorText string) {
+	expectStatus(t, resp, expectedStatusCode)
+	expectHeader(t, resp, "Content-Type", "application/json")
+	expectedJSON := fmt.Sprintf(`{"error":"%s"}`, expectedErrorText)
+	expectBodyContains(t, resp, expectedJSON)
 }
 
 func expectBodyContains(t *testing.T, resp *httptest.ResponseRecorder, expected string) {
