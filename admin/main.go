@@ -282,6 +282,9 @@ func saveFAQText(db *sql.DB, faqID int, text *FAQText) error {
 		   answer = EXCLUDED.answer;
 		`
 	_, err := db.Exec(sqlStatement, faqID, text.Locale.Code, text.Question, text.Answer)
+	if err != nil {
+		logError(err)
+	}
 	return err
 }
 
@@ -290,6 +293,7 @@ func createFAQ(db *sql.DB) (*FAQ, error) {
 	faq := FAQ{}
 	err := db.QueryRow(sqlStatement).Scan(&faq.ID)
 	if err != nil {
+		logError(err)
 		return nil, err
 	}
 	return &faq, nil
@@ -299,17 +303,22 @@ func deleteFAQ(db *sql.DB, faqID int) error {
 	sqlStatement := `DELETE FROM faq_texts WHERE faq_id = $1;`
 	_, err := db.Exec(sqlStatement, faqID)
 	if err != nil {
+		logError(err)
 		return err
 	}
 
 	sqlStatement = `DELETE FROM faqs WHERE id = $1;`
 	_, err = db.Exec(sqlStatement, faqID)
+	if err != nil {
+		logError(err)
+	}
 	return err
 }
 
 func getAllFAQs(db *sql.DB) ([]FAQ, error) {
 	rows, err := db.Query("SELECT id FROM faqs ORDER BY id;")
 	if err != nil {
+		logError(err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -343,6 +352,7 @@ func getAllFAQs(db *sql.DB) ([]FAQ, error) {
 func getTextForFAQ(db *sql.DB, faqID int) ([]FAQText, error) {
 	rows, err := db.Query("SELECT id, locale, question, answer FROM faq_texts WHERE faq_id = $1;", faqID)
 	if err != nil {
+		logError(err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -354,6 +364,7 @@ func getTextForFAQ(db *sql.DB, faqID int) ([]FAQText, error) {
 		var answer string
 		err = rows.Scan(&id, &localeCode, &question, &answer)
 		if err != nil {
+			logError(err)
 			return nil, err
 		}
 		texts = append(texts, FAQText{
@@ -372,12 +383,14 @@ func getTextForFAQ(db *sql.DB, faqID int) ([]FAQText, error) {
 func getFAQ(db *sql.DB, id int) (*FAQ, error) {
 	rows, err := db.Query("SELECT faq_texts.locale, faq_texts.question, faq_texts.answer FROM faqs, faq_texts WHERE faqs.id = $1 AND faq_texts.faq_id = $1;", id)
 	if err != nil {
+		logError(err)
 		return nil, err
 	}
 	defer rows.Close()
 	faq := FAQ{ID: id}
 	faq.Texts, err = getTextForFAQ(db, id)
 	if err != nil {
+		logError(err)
 		return nil, err
 	}
 	return &faq, nil
@@ -392,6 +405,7 @@ func searchFAQs(db *sql.DB, lang string, query string) ([]FAQ, error) {
 		AND faq_texts.locale = $2
 		ORDER BY ts_rank(document, plainto_tsquery('simple', $1)) DESC;`, query, lang)
 	if err != nil {
+		logError(err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -791,7 +805,7 @@ func updateSearchIndex(db *sql.DB) error {
 	sqlStatement := `REFRESH MATERIALIZED VIEW search_index;`
 	_, err := db.Exec(sqlStatement)
 	if err != nil {
-		fmt.Print("DB ERR:", err)
+		logError(err)
 	}
 	return err
 }
@@ -998,4 +1012,8 @@ func parseLocales(locales []string) []language.Tag {
 	}
 
 	return supported
+}
+
+func logError(e error) {
+	log.Println(e)
 }
