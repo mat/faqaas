@@ -1,3 +1,4 @@
 
 start_server
 docker_run.env
+bin/
