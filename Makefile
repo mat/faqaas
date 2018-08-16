@@ -13,4 +13,8 @@ build_docker_image: build_linux_amd64
 	docker build -t matthiasluedtke/faqaas:latest -t matthiasluedtke/faqaas:`cat VERSION` .
 
 docker_run:
-	docker run -p 3000:8080 -e DATABASE_URL=postgres://mat:@docker.for.mac.host.internal/faqaas?sslmode=disable -e HTTP_ALLOWED=true matthiasluedtke/faqaas:latest
+	docker run -p 3000:8080 --env-file docker_run.env matthiasluedtke/faqaas:latest
+
+push_docker_image:
+	docker push matthiasluedtke/faqaas:latest
+	docker push matthiasluedtke/faqaas:`cat VERSION`
