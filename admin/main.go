@@ -222,6 +222,15 @@ type FAQ struct {
 	Texts []FAQText `json:"texts"`
 }
 
+func (f *FAQ) TextForLocale(localeCode string) FAQText {
+	for _, t := range f.Texts {
+		if t.Locale.Code == localeCode {
+			return t
+		}
+	}
+	return FAQText{Locale: Locale{Code: localeCode}}
+}
+
 func (f *FAQ) TextInDefaultLocale() FAQText {
 	for _, t := range f.Texts {
 		if t.Locale.IsDefaultLocale() {
@@ -257,6 +266,8 @@ func getFAQsHTML(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 }
 
 func getSingleFAQHTML(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	localeCode := p.ByName("locale")
+
 	idPart := p.ByName("id")
 	parts := strings.Split(idPart, "-")
 	lastPart := parts[len(parts)-1]
@@ -267,10 +278,14 @@ func getSingleFAQHTML(w http.ResponseWriter, r *http.Request, p httprouter.Param
 		writeJSONErr(w, 404, "faq not found")
 		return
 	}
+	question := faq.TextForLocale(localeCode).Question
+	answer := faq.TextForLocale(localeCode).Answer
 	data := FAQPageData{
-		PageTitle: "Admin / FAQs",
+		PageTitle: question,
 		// MenuBar:   menuBar("FAQs"),
-		FAQ: faq,
+		QuestionText: question,
+		AnswerText:   answer,
+		FAQ:          faq,
 	}
 	mustExecuteTemplateNoLayout(tmplFAQ, w, data)
 }
@@ -517,7 +532,9 @@ type FAQPageData struct {
 	PageTitle string
 	// MenuBar   []MenuEntry
 	// Locales   []Locale
-	FAQ *FAQ
+	FAQ          *FAQ
+	QuestionText string
+	AnswerText   string
 }
 
 type FAQsPageData struct {

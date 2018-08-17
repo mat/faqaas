@@ -7,7 +7,7 @@
   <meta name="author" content="">
   <link rel="icon" href="../../../../favicon.ico">
 
-  <title>FAQs</title>
+  <title>{{ .PageTitle }}</title>
 
   <!-- Bootstrap core CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
@@ -53,8 +53,8 @@
 
     <section class="jumbotron">
       <div class="container">
-        <h1 class="jumbotron-heading">{{ .FAQ.TextInDefaultLocale.Question }}</h1>
-        <p class="lead text-muted">{{ .FAQ.TextInDefaultLocale.Answer }}</p>
+        <h1 class="jumbotron-heading">{{ .QuestionText }}</h1>
+        <p class="lead text-muted">{{ .AnswerText }}</p>
 
 
         <div class="dropdown">
@@ -62,9 +62,9 @@
               English (en)
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-              <a class="dropdown-item" href="#">español (es)</a>
-              <a class="dropdown-item" href="#">Deutsch (de)</a>
-              <a class="dropdown-item" href="#">中文 (zh)</a>
+              <a class="dropdown-item" href="/faq/es/{{ .FAQ.ID }}">español (es)</a>
+              <a class="dropdown-item" href="/faq/de/{{ .FAQ.ID }}">Deutsch (de)</a>
+              <a class="dropdown-item" href="/faq/zh/{{ .FAQ.ID }}">中文 (zh)</a>
             </div>
           </div>
       </div>

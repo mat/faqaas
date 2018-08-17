@@ -28,11 +28,17 @@ func TestGetFAQsHTML(t *testing.T) {
 func TestGetSingleFAQHTML(t *testing.T) {
 	faqRepository = &mockDB{}
 
-	resp := doRequest("GET", "/faq/en/this-is-a-question-123", emptyBody())
+	resp := doRequest("GET", "/faq/de/this-is-a-question-123", emptyBody())
 
 	expectStatus(t, resp, 200)
-	expectBodyContains(t, resp, `<h1 class="jumbotron-heading">question?</h1>`)
-	expectBodyContains(t, resp, `<p class="lead text-muted">answer!</p>`)
+	expectBodyContains(t, resp, `<h1 class="jumbotron-heading">Frage?</h1>`)
+	expectBodyContains(t, resp, `<p class="lead text-muted">Antwort!</p>`)
+
+	expectBodyContains(t, resp, `<title>Frage?</title>`)
+
+	expectBodyContains(t, resp, `href="/faq/es/123"`)
+	expectBodyContains(t, resp, `href="/faq/de/123"`)
+	expectBodyContains(t, resp, `href="/faq/zh/123"`)
 
 	resp = doRequest("GET", "/faq/en/this-is-a-question-12broken34", emptyBody())
 	expectStatus(t, resp, 404)
