@@ -8,6 +8,7 @@
 Load [schema.sql](https://github.com/mat/faqaas/blob/master/schema.sql) 
 
 ```
+createdb faqaas_test
 psql -U postgres -d faqaas_test -f schema.sql
 ```
 
