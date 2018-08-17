@@ -28,16 +28,17 @@ func TestGetFAQsHTML(t *testing.T) {
 	expectBodyContains(t, resp, `locale=en`)
 }
 func TestGetSingleFAQHTML(t *testing.T) {
-	resp := doRequest("GET", "/faq/en/this-is-a-question-1234", emptyBody())
+	faqRepository = &mockDB{}
+
+	resp := doRequest("GET", "/faq/en/this-is-a-question-123", emptyBody())
 
 	expectStatus(t, resp, 200)
-	expectBodyContains(t, resp, `locale=en`)
-	expectBodyContains(t, resp, `id=1234`)
+	expectBodyContains(t, resp, `<h1 class="jumbotron-heading">question?</h1>`)
+	expectBodyContains(t, resp, `<p class="lead text-muted">answer!</p>`)
 
 	resp = doRequest("GET", "/faq/en/this-is-a-question-12broken34", emptyBody())
-	expectStatus(t, resp, 200)
-	expectBodyContains(t, resp, `locale=en`)
-	expectBodyContains(t, resp, `id=0`)
+	expectStatus(t, resp, 404)
+	expectBodyContains(t, resp, `faq not found`)
 }
 
 func TestGetAdminIndex(t *testing.T) {

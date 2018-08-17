@@ -257,15 +257,22 @@ func getFAQsHTML(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 }
 
 func getSingleFAQHTML(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	fmt.Fprint(w, "Welcome!\n")
-	fmt.Fprint(w, "locale=", p.ByName("locale"), "\n")
-	fmt.Fprint(w, "id=", p.ByName("id"), "\n")
-
 	idPart := p.ByName("id")
 	parts := strings.Split(idPart, "-")
 	lastPart := parts[len(parts)-1]
 	id, _ := strconv.Atoi(lastPart)
-	fmt.Fprint(w, "id=", id, "\n")
+
+	faq, err := faqRepository.FAQById(id)
+	if err != nil {
+		writeJSONErr(w, 404, "faq not found")
+		return
+	}
+	data := FAQPageData{
+		PageTitle: "Admin / FAQs",
+		// MenuBar:   menuBar("FAQs"),
+		FAQ: faq,
+	}
+	mustExecuteTemplateNoLayout(tmplFAQ, w, data)
 }
 
 func getLanguages(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -506,6 +513,13 @@ func getSearchFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	writeJSON(w, faqs)
 }
 
+type FAQPageData struct {
+	PageTitle string
+	// MenuBar   []MenuEntry
+	// Locales   []Locale
+	FAQ *FAQ
+}
+
 type FAQsPageData struct {
 	PageTitle string
 	MenuBar   []MenuEntry
@@ -538,6 +552,8 @@ var tmplAdminFAQEdit *template.Template
 var tmplAdminLocales *template.Template
 var tmplAdminLogin *template.Template
 
+var tmplFAQ *template.Template
+
 func init() {
 	layoutTemplatePath := templPath("layout.html")
 	tmplAdminFAQs = template.Must(template.ParseFiles(layoutTemplatePath, templPath("faqs.html")))
@@ -545,6 +561,8 @@ func init() {
 	tmplAdminFAQEdit = template.Must(template.ParseFiles(layoutTemplatePath, templPath("faqs_edit.html")))
 	tmplAdminLocales = template.Must(template.ParseFiles(layoutTemplatePath, templPath("locales.html")))
 	tmplAdminLogin = template.Must(template.ParseFiles(templPath("login.html")))
+
+	tmplFAQ = template.Must(template.ParseFiles(templPath("faq.html")))
 }
 
 func templPath(fileName string) string {
@@ -554,6 +572,13 @@ func templPath(fileName string) string {
 	// }
 
 	return filepath.Join(root, "admin/templates/", fileName)
+}
+
+func mustExecuteTemplateNoLayout(tmpl *template.Template, wr io.Writer, data interface{}) {
+	err := tmpl.Execute(wr, data)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func mustExecuteTemplate(tmpl *template.Template, wr io.Writer, data interface{}) {
