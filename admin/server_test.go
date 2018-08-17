@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-// TODO https://stackoverflow.com/questions/25337126/testing-http-routes-in-golang#25585458
-
 func TestGetRoot(t *testing.T) {
 	resp := doRequest("GET", "/", emptyBody())
 
