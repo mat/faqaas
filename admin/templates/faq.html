@@ -53,18 +53,19 @@
 
     <section class="jumbotron">
       <div class="container">
-        <h1 class="jumbotron-heading">{{ .QuestionText }}</h1>
-        <p class="lead text-muted">{{ .AnswerText }}</p>
+        <h1 class="jumbotron-heading">{{ .Text.Question }}</h1>
+        <p class="lead text-muted">{{ .Text.Answer }}</p>
 
 
         <div class="dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              English (en)
+              {{ .Text.Locale.NameLocal }}
+              ({{ .Text.Locale.Code }})
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-              <a class="dropdown-item" href="/faq/es/{{ .FAQ.ID }}">español (es)</a>
-              <a class="dropdown-item" href="/faq/de/{{ .FAQ.ID }}">Deutsch (de)</a>
-              <a class="dropdown-item" href="/faq/zh/{{ .FAQ.ID }}">中文 (zh)</a>
+              {{range .FAQ.Texts}}
+              <a class="dropdown-item" href="/faq/{{ .Locale.Code }}/{{ $.FAQ.ID }}">{{ .Locale.NameLocal }} ({{ .Locale.Code }})</a>
+              {{end}}
             </div>
           </div>
       </div>

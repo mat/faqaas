@@ -36,9 +36,9 @@ func TestGetSingleFAQHTML(t *testing.T) {
 
 	expectBodyContains(t, resp, `<title>Frage?</title>`)
 
-	expectBodyContains(t, resp, `href="/faq/es/123"`)
+	expectBodyContains(t, resp, `href="/faq/en/123"`)
 	expectBodyContains(t, resp, `href="/faq/de/123"`)
-	expectBodyContains(t, resp, `href="/faq/zh/123"`)
+	// expectBodyContains(t, resp, `href="/faq/zh/123"`)
 
 	resp = doRequest("GET", "/faq/en/this-is-a-question-12broken34", emptyBody())
 	expectStatus(t, resp, 404)
@@ -177,7 +177,7 @@ func TestGetAPIFAQs(t *testing.T) {
 
 	expectStatus(t, resp, 200)
 	expectHeader(t, resp, "Content-Type", "application/json")
-	expectBodyContains(t, resp, `[{"id":123,"texts":[{"locale":{"code":"en"},"question":"question?","answer":"answer!"},{"locale":{"code":"de"},"question":"Frage?","answer":"Antwort!"}]},{"id":456,"texts":null},{"id":789,"texts":null}]`)
+	expectBodyContains(t, resp, `[{"id":123,"texts":[{"locale":{"code":"en","name_local":"English"},"question":"question?","answer":"answer!"},{"locale":{"code":"de","name_local":"Deutsch"},"question":"Frage?","answer":"Antwort!"}]},{"id":456,"texts":null},{"id":789,"texts":null}]`)
 }
 
 func TestGetAPIFAQsWithBrokenDB(t *testing.T) {
@@ -199,7 +199,7 @@ func TestGetAPISingleFAQ(t *testing.T) {
 	resp = doRequest("GET", "/api/faqs/123", emptyBody())
 	expectStatus(t, resp, 200)
 	expectHeader(t, resp, "Content-Type", "application/json")
-	expectBodyContains(t, resp, `{"id":123,"texts":[{"locale":{"code":"en"},"question":"question?","answer":"answer!"},{"locale":{"code":"de"},"question":"Frage?","answer":"Antwort!"}]}`)
+	expectBodyContains(t, resp, `{"id":123,"texts":[{"locale":{"code":"en","name_local":"English"},"question":"question?","answer":"answer!"},{"locale":{"code":"de","name_local":"Deutsch"},"question":"Frage?","answer":"Antwort!"}]}`)
 }
 
 func TestGetAPISearchFAQ(t *testing.T) {
@@ -213,7 +213,7 @@ func TestGetAPISearchFAQ(t *testing.T) {
 	resp = doRequest("GET", "/api/search-faqs?lang=en&query=bar", emptyBody())
 	expectStatus(t, resp, 200)
 	expectHeader(t, resp, "Content-Type", "application/json")
-	expectBodyContains(t, resp, `[{"id":123,"texts":[{"locale":{"code":"en"},"question":"question?","answer":"answer!"},{"locale":{"code":"de"},"question":"Frage?","answer":"Antwort!"}]},{"id":456,"texts":null},{"id":789,"texts":null}]`)
+	expectBodyContains(t, resp, `[{"id":123,"texts":[{"locale":{"code":"en","name_local":"English"},"question":"question?","answer":"answer!"},{"locale":{"code":"de","name_local":"Deutsch"},"question":"Frage?","answer":"Antwort!"}]},{"id":456,"texts":null},{"id":789,"texts":null}]`)
 }
 
 func TestGetAPISearchFAQWithBrokenDB(t *testing.T) {

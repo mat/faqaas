@@ -110,8 +110,8 @@ type mockDB struct{}
 
 func (mdb *mockDB) AllFAQs() ([]FAQ, error) {
 	texts := make([]FAQText, 0)
-	texts = append(texts, FAQText{Locale: Locale{Code: "en"}, Question: "question?", Answer: "answer!"})
-	texts = append(texts, FAQText{Locale: Locale{Code: "de"}, Question: "Frage?", Answer: "Antwort!"})
+	texts = append(texts, FAQText{Locale: Locale{Code: "en", NameLocal: "English"}, Question: "question?", Answer: "answer!"})
+	texts = append(texts, FAQText{Locale: Locale{Code: "de", NameLocal: "Deutsch"}, Question: "Frage?", Answer: "Antwort!"})
 
 	faqs := make([]FAQ, 0)
 	faqs = append(faqs, FAQ{ID: 123, Texts: texts})
@@ -278,14 +278,11 @@ func getSingleFAQHTML(w http.ResponseWriter, r *http.Request, p httprouter.Param
 		writeJSONErr(w, 404, "faq not found")
 		return
 	}
-	question := faq.TextForLocale(localeCode).Question
-	answer := faq.TextForLocale(localeCode).Answer
 	data := FAQPageData{
-		PageTitle: question,
+		PageTitle: faq.TextForLocale(localeCode).Question,
 		// MenuBar:   menuBar("FAQs"),
-		QuestionText: question,
-		AnswerText:   answer,
-		FAQ:          faq,
+		Text: faq.TextForLocale(localeCode),
+		FAQ:  faq,
 	}
 	mustExecuteTemplateNoLayout(tmplFAQ, w, data)
 }
@@ -390,7 +387,7 @@ func getTextForFAQ(db *sql.DB, faqID int) ([]FAQText, error) {
 			return nil, err
 		}
 		texts = append(texts, FAQText{
-			Locale:   Locale{Code: localeCode},
+			Locale:   localeFromCode(localeCode),
 			Question: question, Answer: answer})
 	}
 
@@ -532,9 +529,8 @@ type FAQPageData struct {
 	PageTitle string
 	// MenuBar   []MenuEntry
 	// Locales   []Locale
-	FAQ          *FAQ
-	QuestionText string
-	AnswerText   string
+	FAQ  *FAQ
+	Text FAQText
 }
 
 type FAQsPageData struct {
@@ -1020,15 +1016,12 @@ var supportedLocales []Locale
 
 func init() {
 	locales := strings.Split(os.Getenv("SUPPORTED_LOCALES"), ",")
-
 	supportedLocales = []Locale{}
-	en := display.English.Tags()
 	for _, code := range locales {
-		tag, err := language.Parse(code)
-		if err != nil {
-			panic(nil)
+		locale := localeFromCode(code)
+		if len(locale.NameEnglish) == 0 {
+			panic(fmt.Errorf("unsupported locale: %v", code))
 		}
-		locale := Locale{Code: code, NameEnglish: en.Name(tag), NameLocal: display.Self.Name(tag)}
 		supportedLocales = append(supportedLocales, locale)
 	}
 	if len(supportedLocales) == 0 {
@@ -1037,6 +1030,20 @@ func init() {
 	languageMatcher = language.NewMatcher(parseLocales(locales))
 
 	rand.Seed(time.Now().UnixNano())
+}
+
+func localeFromCode(languageCode string) Locale {
+	tag, err := language.Parse(languageCode)
+	if err != nil {
+		return Locale{Code: languageCode}
+	}
+	en := display.English.Tags()
+	locale := Locale{
+		Code:        languageCode,
+		NameEnglish: en.Name(tag),
+		NameLocal:   display.Self.Name(tag),
+	}
+	return locale
 }
 
 func getDefaultLocale() Locale {
