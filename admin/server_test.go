@@ -337,6 +337,38 @@ func TestCreateAndCheckAdminJWT(t *testing.T) {
 	expectIsTrue(t, isValid)
 }
 
+func TestLocaleFromCode(t *testing.T) {
+	tests := []struct {
+		code        string
+		nameEnglish string
+		nameLocal   string
+	}{
+		{code: "en", nameEnglish: "English", nameLocal: "English"},
+		{code: "de", nameEnglish: "German", nameLocal: "Deutsch"},
+		{code: "fr", nameEnglish: "French", nameLocal: "français"},
+		{code: "es", nameEnglish: "Spanish", nameLocal: "español"},
+		{code: "it", nameEnglish: "Italian", nameLocal: "italiano"},
+		{code: "pt", nameEnglish: "Portuguese", nameLocal: "português"},
+		{code: "pt-BR", nameEnglish: "Brazilian Portuguese", nameLocal: "português"},
+		{code: "no", nameEnglish: "Norwegian Bokmål", nameLocal: "norsk bokmål"},
+		{code: "ru", nameEnglish: "Russian", nameLocal: "русский"},
+		{code: "zh", nameEnglish: "Chinese", nameLocal: "中文"},
+		{code: "ar", nameEnglish: "Arabic", nameLocal: "العربية"},
+		{code: "zh", nameEnglish: "Chinese", nameLocal: "中文"},
+		{code: "--", nameEnglish: "", nameLocal: ""},
+	}
+
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("Locale_%v", test.code), func(t *testing.T) {
+			locale := localeFromCode(test.code)
+			expectSameString(t, test.code, locale.Code)
+			expectSameString(t, test.nameEnglish, locale.NameEnglish)
+			expectSameString(t, test.nameLocal, locale.NameLocal)
+		})
+	}
+
+}
+
 func prepareDB() *DB {
 	repo, err := NewDB(os.Getenv("DATABASE_URL"))
 	if err != nil {
