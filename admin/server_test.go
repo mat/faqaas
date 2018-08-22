@@ -337,6 +337,16 @@ func TestCreateAndCheckAdminJWT(t *testing.T) {
 	expectIsTrue(t, isValid)
 }
 
+func TestLoggedInAsAdmin(t *testing.T) {
+	request, err := http.NewRequest("GET", "/does/not/matter", strings.NewReader(""))
+	expectNoError(t, err)
+	expectIsTrue(t, !loggedInAsAdmin(request))
+
+	cookie := createAuthCookie()
+	request.AddCookie(&cookie)
+	expectIsTrue(t, loggedInAsAdmin(request))
+}
+
 func TestLocaleFromCode(t *testing.T) {
 	tests := []struct {
 		code        string

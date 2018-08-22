@@ -862,7 +862,8 @@ func postAdminLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	password := r.FormValue("password")
 
 	if isAdminFunc(email, password) {
-		setAuthCookie(w)
+		cookie := createAuthCookie()
+		http.SetCookie(w, &cookie)
 		http.Redirect(w, r, "/admin/faqs", http.StatusFound)
 	} else {
 		http.Redirect(w, r, "/admin/login", http.StatusFound)
@@ -893,7 +894,7 @@ const (
 	adminSessionDuration = 24 * time.Hour
 )
 
-func setAuthCookie(w http.ResponseWriter) {
+func createAuthCookie() http.Cookie {
 	expires := time.Now().Add(adminSessionDuration)
 
 	// https://infosec.mozilla.org/guidelines/web_security#cookies
@@ -905,8 +906,7 @@ func setAuthCookie(w http.ResponseWriter) {
 		Secure:   !httpAllowed(),
 		HttpOnly: true,
 	}
-
-	http.SetCookie(w, &ck)
+	return ck
 }
 
 func main() {
