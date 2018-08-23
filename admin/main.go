@@ -261,8 +261,12 @@ func redirectToFAQs(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 }
 
 func getFAQsHTML(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	fmt.Fprint(w, "Welcome!\n")
-	fmt.Fprint(w, "locale=", p.ByName("locale"))
+	locale := localeFromCode(p.ByName("locale"))
+	data := FAQIndexPageData{
+		PageTitle: fmt.Sprintf("FAQs (%v, %v)", locale.NameLocal, locale.Code),
+		Locale:    locale,
+	}
+	mustExecuteTemplateNoLayout(tmplFAQIndex, w, data)
 }
 
 func getSingleFAQHTML(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -525,6 +529,12 @@ func getSearchFAQs(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	writeJSON(w, faqs)
 }
 
+type FAQIndexPageData struct {
+	PageTitle string
+	Locale    Locale
+	FAQs      []FAQ
+}
+
 type FAQPageData struct {
 	PageTitle string
 	// MenuBar   []MenuEntry
@@ -566,6 +576,7 @@ var tmplAdminLocales *template.Template
 var tmplAdminLogin *template.Template
 
 var tmplFAQ *template.Template
+var tmplFAQIndex *template.Template
 
 func init() {
 	layoutTemplatePath := templPath("layout.html")
@@ -576,6 +587,7 @@ func init() {
 	tmplAdminLogin = template.Must(template.ParseFiles(templPath("login.html")))
 
 	tmplFAQ = template.Must(template.ParseFiles(templPath("faq.html")))
+	tmplFAQIndex = template.Must(template.ParseFiles(templPath("faq_index.html")))
 }
 
 func templPath(fileName string) string {
@@ -924,9 +936,6 @@ func main() {
 	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
 
 	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
 	addr := "0.0.0.0:" + port
 
 	loggedRouter := handlers.CombinedLoggingHandler(os.Stdout, router)

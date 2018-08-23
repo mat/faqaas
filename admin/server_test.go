@@ -23,7 +23,7 @@ func TestGetFAQsHTML(t *testing.T) {
 	resp := doRequest("GET", "/faqs/en", emptyBody())
 
 	expectStatus(t, resp, 200)
-	expectBodyContains(t, resp, `locale=en`)
+	expectBodyContains(t, resp, `<title>FAQs (English, en)</title>`)
 }
 func TestGetSingleFAQHTML(t *testing.T) {
 	faqRepository = &mockDB{}
